@@ -54,8 +54,7 @@ def encode_state(encoder, state):
 
 def collect_trajectories(encoder, env_class, num_games, min_len=6):
     trajectories = []
-    collected = 0
-    for _ in tqdm(range(num_games), desc=f"  {env_class.__name__}", ncols=50):
+    for _ in tqdm(range(num_games), desc=f"  Collecting {env_class.__name__}", ncols=70):
         env = env_class()
         state = env.reset()
         z_list = [encode_state(encoder, state)]
@@ -78,7 +77,6 @@ def collect_trajectories(encoder, env_class, num_games, min_len=6):
                 "r": torch.tensor(r_list, dtype=torch.float32),
                 "d": torch.tensor(d_list, dtype=torch.float32),
             })
-            collected += 1
     return trajectories
 
 
@@ -102,7 +100,8 @@ def train_world_model(model, train_loader, val_loader, name):
     best_val = float("inf")
     best_state = None
 
-    for epoch in range(TRAIN_EPOCHS):
+    pbar = tqdm(range(TRAIN_EPOCHS), desc=f"    {name:6s}", ncols=70)
+    for epoch in pbar:
         model.train()
         for z_win, a_win, r_win, d_win in train_loader:
             z_win, a_win = z_win.to(DEVICE), a_win.to(DEVICE)
@@ -148,8 +147,7 @@ def train_world_model(model, train_loader, val_loader, name):
             best_val = val_avg
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
 
-        if (epoch+1) % 10 == 0 or epoch == 0:
-            print(f"    {name:6s} epoch {epoch+1:3d}/{TRAIN_EPOCHS}  val_loss={val_avg:.4f}")
+        pbar.set_postfix(val=f"{val_avg:.4f}", best=f"{best_val:.4f}")
 
     if best_state:
         model.load_state_dict({k: v.to(DEVICE) for k, v in best_state.items()})
@@ -199,11 +197,11 @@ def test_multistep(model, encoder, env_class, num_traj=50):
     return np.mean(mse_1) if mse_1 else 0, np.mean(mse_5) if mse_5 else 0
 
 
-def evaluate_agent(encoder, policy, planner, env_class, num_games, mode="adaptive"):
+def evaluate_agent(encoder, policy, planner, env_class, num_games, mode="adaptive", game_name=""):
     wins = 0
     fast_moves = 0
     slow_moves = 0
-    for _ in range(num_games):
+    for _ in tqdm(range(num_games), desc=f"      {mode:>8s} {game_name}", ncols=70):
         env = env_class()
         state = env.reset()
         done = False
@@ -299,11 +297,10 @@ def exp3_planning_comparison(encoder, policy, planner):
         print(f"\n  Mode: {mode}")
         for name, env_class in [("TTT", TicTacToe), ("C4", ConnectFour)]:
             n = 200 if mode == "always" else NUM_EVAL_GAMES
-            print(f"    {name} ({n} games)...", end=" ", flush=True)
-            r = evaluate_agent(encoder, policy, planner, env_class, n, mode)
+            r = evaluate_agent(encoder, policy, planner, env_class, n, mode, name)
             key = f"{mode}_{name}"
             results[key] = r
-            print(f"win={r['win_rate']:.1%}  fast={r['fast_pct']:.1%}  slow={r['slow_pct']:.1%}  sims={r['total_sims']}")
+            print(f"    -> win={r['win_rate']:.1%}  fast={r['fast_pct']:.1%}  slow={r['slow_pct']:.1%}  sims={r['total_sims']}")
 
     print(f"\n  {'Mode':>10} | {'Game':>4} | {'Win%':>6} | {'Fast%':>6} | {'Slow%':>6} | {'Sims':>6}")
     print("  " + "-" * 48)
@@ -319,11 +316,13 @@ def main():
     print("  BASIL — Running All Experiments")
     print("=" * 60)
     print(f"  Device: {DEVICE}")
+    print(f"  Games per env: {NUM_GAMES}")
+    print(f"  Training epochs: {TRAIN_EPOCHS}")
 
     encoder = load_encoder()
     print("Loaded encoder\n")
 
-    print("Collecting trajectories for world model training...")
+    print("Collecting trajectories...")
     ttt_traj = collect_trajectories(encoder, TicTacToe, NUM_GAMES, min_len=ROLLOUT_H+1)
     c4_traj = collect_trajectories(encoder, ConnectFour, NUM_GAMES, min_len=ROLLOUT_H+1)
     all_traj = ttt_traj + c4_traj
