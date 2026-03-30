@@ -1,0 +1,15 @@
+{
+  "num_games": 1000,
+  "wins": 799,
+  "losses": 199,
+  "draws": 2,
+  "win_rate": 0.799,
+  "loss_rate": 0.199,
+  "draw_rate": 0.002,
+  "fast_moves": 1439,
+  "slow_moves": 6331,
+  "fast_pct": 0.1851994851994852,
+  "slow_pct": 0.8148005148005149,
+  "avg_jsd": 0.2625595706194984,
+  "avg_game_length": 14.741
+}

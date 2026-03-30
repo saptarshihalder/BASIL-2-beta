@@ -4,6 +4,7 @@ import random
 import json
 import numpy as np
 import torch
+from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -80,7 +81,7 @@ def basil_agent_step(encoder, policy, planner, env, state):
         return action.item(), False, jsd.item()
 
 
-def evaluate_basil(encoder, policy, planner, env_class, num_games=NUM_EVAL_GAMES):
+def evaluate_basil(encoder, policy, planner, env_class, num_games=NUM_EVAL_GAMES, game_name=""):
     wins = 0
     losses = 0
     draws = 0
@@ -89,7 +90,7 @@ def evaluate_basil(encoder, policy, planner, env_class, num_games=NUM_EVAL_GAMES
     jsd_values = []
     game_lengths = []
 
-    for _ in range(num_games):
+    for _ in tqdm(range(num_games), desc=f"  {game_name}", ncols=60):
         env = env_class()
         state = env.reset()
         done = False
@@ -185,7 +186,7 @@ def main():
 
     for name, env_class in [("TicTacToe", TicTacToe), ("Connect4", ConnectFour)]:
         print(f"\nEvaluating on {name} ({NUM_EVAL_GAMES} games)...")
-        results = evaluate_basil(encoder, policy, planner, env_class, NUM_EVAL_GAMES)
+        results = evaluate_basil(encoder, policy, planner, env_class, NUM_EVAL_GAMES, name)
         print_results(results, f"BASIL Agent vs Random — {name}")
 
         save_path = f"experiments/basil_eval_{name.lower()}.json"
