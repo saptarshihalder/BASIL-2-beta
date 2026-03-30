@@ -1,0 +1,74 @@
+{
+  "exp2_world_models": {
+    "Mamba": {
+      "params": 275154,
+      "val_loss": 4.914089742416966,
+      "ttt_1step": 0.11593678557584362,
+      "ttt_5step": 0.4126683518050178,
+      "c4_1step": 2.408573244345993,
+      "c4_5step": 11.389962096416408
+    },
+    "GRU": {
+      "params": 150994,
+      "val_loss": 5.213716533230829,
+      "ttt_1step": 1.3461375143378973,
+      "ttt_5step": 1.134991076309234,
+      "c4_1step": 2.403364417283827,
+      "c4_5step": 9.83182992142979
+    },
+    "LSTM": {
+      "params": 184018,
+      "val_loss": 5.264992923052529,
+      "ttt_1step": 1.2719526570932618,
+      "ttt_5step": 1.1519600250597657,
+      "c4_1step": 2.5099511220108104,
+      "c4_5step": 9.176528502491456
+    },
+    "MLP": {
+      "params": 84946,
+      "val_loss": 8.9998069072851,
+      "ttt_1step": 2.514513549687979,
+      "ttt_5step": 10.106652409880311,
+      "c4_1step": 3.3189033991552788,
+      "c4_5step": 14.429679517075977
+    }
+  },
+  "exp3_planning": {
+    "never_TTT": {
+      "win_rate": 0.842,
+      "fast_pct": 1.0,
+      "slow_pct": 0.0,
+      "total_sims": 0
+    },
+    "never_C4": {
+      "win_rate": 0.886,
+      "fast_pct": 1.0,
+      "slow_pct": 0.0,
+      "total_sims": 0
+    },
+    "adaptive_TTT": {
+      "win_rate": 0.848,
+      "fast_pct": 0.46324786324786327,
+      "slow_pct": 0.5367521367521367,
+      "total_sims": 9420
+    },
+    "adaptive_C4": {
+      "win_rate": 0.774,
+      "fast_pct": 0.1859375,
+      "slow_pct": 0.8140625,
+      "total_sims": 31260
+    },
+    "always_TTT": {
+      "win_rate": 0.84,
+      "fast_pct": 0.0,
+      "slow_pct": 1.0,
+      "total_sims": 6930
+    },
+    "always_C4": {
+      "win_rate": 0.795,
+      "fast_pct": 0.0,
+      "slow_pct": 1.0,
+      "total_sims": 14450
+    }
+  }
+}
