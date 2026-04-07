@@ -20,7 +20,7 @@ from envs.game_registry import pad_state, PAD_H, PAD_W, MAX_ACTIONS
 LATENT_DIM = 64
 HIDDEN_DIM = 128
 NUM_HEADS = 5
-JSD_THRESHOLD = 1.0
+JSD_THRESHOLD = 0.5
 MAX_PROB_THRESHOLD = 0.6
 NUM_ROLLOUTS = 10
 HORIZON = 5
@@ -65,13 +65,13 @@ def get_valid_mask(env):
     return mask.unsqueeze(0)
 
 
-def basil_agent_step(encoder, policy, planner, env, state):
+def basil_step(encoder, policy, planner, env, state):
     z = encode(encoder, state)
     valid_mask = get_valid_mask(env)
     valid_actions = env.get_valid_actions()
 
     with torch.no_grad():
-        action, _, _, logits_list = policy.get_action_and_value(z, valid_mask, deterministic=True)
+        action, _, _, logits_list, _ = policy.get_action_and_value(z, valid_mask, deterministic=True)
         use_plan, jsd, max_p = should_plan(logits_list, valid_mask, JSD_THRESHOLD, MAX_PROB_THRESHOLD)
 
     if use_plan.item() and planner is not None:
@@ -82,35 +82,27 @@ def basil_agent_step(encoder, policy, planner, env, state):
 
 
 def evaluate_basil(encoder, policy, planner, env_class, num_games=NUM_EVAL_GAMES, game_name=""):
-    wins = 0
-    losses = 0
-    draws = 0
-    fast_moves = 0
-    slow_moves = 0
-    jsd_values = []
-    game_lengths = []
+    wins, losses, draws = 0, 0, 0
+    fast_moves, slow_moves = 0, 0
+    jsd_values, game_lengths = [], []
 
     for _ in tqdm(range(num_games), desc=f"  {game_name}", ncols=60):
         env = env_class()
         state = env.reset()
         done = False
         moves = 0
-
         while not done:
             if env.current_player == 1:
-                action, used_planning, jsd_val = basil_agent_step(encoder, policy, planner, env, state)
+                action, used_planning, jsd_val = basil_step(encoder, policy, planner, env, state)
                 if used_planning:
                     slow_moves += 1
                 else:
                     fast_moves += 1
                 jsd_values.append(jsd_val)
             else:
-                valid = env.get_valid_actions()
-                action = random.choice(valid)
-
-            state, reward, done, info = env.step(action)
+                action = random.choice(env.get_valid_actions())
+            state, _, done, info = env.step(action)
             moves += 1
-
         game_lengths.append(moves)
         if info["winner"] == 1:
             wins += 1
@@ -121,22 +113,15 @@ def evaluate_basil(encoder, policy, planner, env_class, num_games=NUM_EVAL_GAMES
 
     total = wins + losses + draws
     total_moves = fast_moves + slow_moves
-    results = {
-        "num_games": num_games,
-        "wins": wins,
-        "losses": losses,
-        "draws": draws,
-        "win_rate": wins / total,
-        "loss_rate": losses / total,
-        "draw_rate": draws / total,
-        "fast_moves": fast_moves,
-        "slow_moves": slow_moves,
+    return {
+        "num_games": num_games, "wins": wins, "losses": losses, "draws": draws,
+        "win_rate": wins / total, "loss_rate": losses / total, "draw_rate": draws / total,
+        "fast_moves": fast_moves, "slow_moves": slow_moves,
         "fast_pct": fast_moves / total_moves if total_moves > 0 else 0,
         "slow_pct": slow_moves / total_moves if total_moves > 0 else 0,
         "avg_jsd": float(np.mean(jsd_values)) if jsd_values else 0,
         "avg_game_length": float(np.mean(game_lengths)),
     }
-    return results
 
 
 def print_results(results, label):
@@ -156,7 +141,7 @@ def print_results(results, label):
 
 def main():
     print("=" * 55)
-    print("  BASIL — Full System Evaluation")
+    print("  BASIL — Full System Evaluation (Merged)")
     print("=" * 55)
     print(f"  Device:        {DEVICE}")
     print(f"  JSD threshold: {JSD_THRESHOLD}")
@@ -177,19 +162,18 @@ def main():
     wm_path = "checkpoints/world_model.pt"
     if os.path.exists(wm_path):
         wm = load_world_model(wm_path, str(DEVICE))
-        planner = PlanningModule(wm, num_rollouts=NUM_ROLLOUTS, horizon=HORIZON)
-        print("Loaded world model + planner")
+        planner = PlanningModule(wm, policy=policy, num_rollouts=NUM_ROLLOUTS, horizon=HORIZON)
+        print("Loaded world model + policy-guided planner")
     else:
-        print("No world model found — running fast path only")
+        print("No world model — fast path only")
 
     os.makedirs("experiments", exist_ok=True)
 
     for name, env_class in [("TicTacToe", TicTacToe), ("Connect4", ConnectFour)]:
-        print(f"\nEvaluating on {name} ({NUM_EVAL_GAMES} games)...")
+        print(f"\nEvaluating {name} ({NUM_EVAL_GAMES} games)...")
         results = evaluate_basil(encoder, policy, planner, env_class, NUM_EVAL_GAMES, name)
-        print_results(results, f"BASIL Agent vs Random — {name}")
-
-        save_path = f"experiments/basil_eval_{name.lower()}.json"
+        print_results(results, f"BASIL vs Random — {name}")
+        save_path = f"experiments/basil_merged_{name.lower()}.json"
         with open(save_path, "w") as f:
             json.dump(results, f, indent=2)
         print(f"  Saved -> {save_path}")

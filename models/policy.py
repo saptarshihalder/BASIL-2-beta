@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical
 
 
 class MultiHeadPolicy(nn.Module):
@@ -41,19 +42,20 @@ class MultiHeadPolicy(nn.Module):
         logits_list, value = self.forward(z, valid_mask)
         avg_logits = torch.stack(logits_list, dim=0).mean(dim=0)
         probs = F.softmax(avg_logits, dim=-1)
+        dist = Categorical(probs)
         if deterministic:
             action = probs.argmax(dim=-1)
         else:
-            dist = torch.distributions.Categorical(probs)
             action = dist.sample()
-        log_prob = torch.distributions.Categorical(probs).log_prob(action)
-        return action, log_prob, value, logits_list
+        log_prob = dist.log_prob(action)
+        entropy = dist.entropy()
+        return action, log_prob, value, logits_list, entropy
 
     def evaluate_actions(self, z, actions, valid_mask=None):
         logits_list, value = self.forward(z, valid_mask)
         avg_logits = torch.stack(logits_list, dim=0).mean(dim=0)
         probs = F.softmax(avg_logits, dim=-1)
-        dist = torch.distributions.Categorical(probs)
+        dist = Categorical(probs)
         log_prob = dist.log_prob(actions)
         entropy = dist.entropy()
         return log_prob, entropy, value
