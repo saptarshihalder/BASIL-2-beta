@@ -3,35 +3,27 @@ import sys
 import random
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from models.encoder_decoder import Encoder
 from models.policy import MultiHeadPolicy
 from utils.uncertainty import should_plan
 from envs.tictactoe import TicTacToe
-from envs.connect4 import ConnectFour
-from envs.game_registry import pad_state, PAD_H, PAD_W, MAX_ACTIONS
 from train_ppo import (
     load_encoder, encode, get_valid_mask,
-    collect_rollout, compute_gae, ppo_update, evaluate,
-    LATENT_DIM, HIDDEN_DIM, GAMMA, GAE_LAMBDA, CLIP_EPS,
-    ENTROPY_COEF, VALUE_COEF, UPDATE_STEPS, ROLLOUT_STEPS,
-    DEVICE, LR,
+    collect_p1_episode, compute_gae, ppo_update, evaluate,
+    LATENT_DIM, HIDDEN_DIM, DEVICE, LR, MIN_STEPS, MAX_ACTIONS,
 )
 
 NUM_HEADS = 5
-EPOCHS = 500
+EPOCHS = 1000
 EVAL_INTERVAL = 50
 JSD_THRESHOLD = 0.5
 MAX_PROB_THRESHOLD = 0.6
 
 
 def evaluate_with_uncertainty(encoder, policy, env_class, num_games=100):
-    wins = 0
-    fast = 0
-    slow = 0
+    wins, fast, slow = 0, 0, 0
     for _ in range(num_games):
         env = env_class()
         state = env.reset()
@@ -41,8 +33,10 @@ def evaluate_with_uncertainty(encoder, policy, env_class, num_games=100):
                 z = encode(encoder, state)
                 valid_mask = get_valid_mask(env)
                 with torch.no_grad():
-                    action, _, _, logits_list, _ = policy.get_action_and_value(z.unsqueeze(0), valid_mask, deterministic=True)
-                    use_plan, jsd, max_p = should_plan(logits_list, valid_mask, JSD_THRESHOLD, MAX_PROB_THRESHOLD)
+                    action, _, _, logits_list, _ = policy.get_action_and_value(
+                        z.unsqueeze(0), valid_mask, deterministic=True
+                    )
+                    use_plan, _, _ = should_plan(logits_list, valid_mask, JSD_THRESHOLD, MAX_PROB_THRESHOLD)
                 if use_plan.item():
                     slow += 1
                 else:
@@ -59,7 +53,7 @@ def evaluate_with_uncertainty(encoder, policy, env_class, num_games=100):
 
 def main():
     print("=" * 55)
-    print("  BASIL — Ensemble PPO Training (Merged)")
+    print("  BASIL — Ensemble PPO Training")
     print("=" * 55)
     print(f"  Device: {DEVICE}")
     print(f"  Heads: {NUM_HEADS}")
@@ -74,23 +68,33 @@ def main():
     ).to(DEVICE)
     optimizer = torch.optim.Adam(policy.parameters(), lr=LR)
 
-    print("  Training on TicTacToe vs random (ensemble)...")
+    print("  Training on TicTacToe vs random...")
     print(f"  {'Epoch':>7} | {'Win Rate':>10} | {'Fast %':>8} | {'Slow %':>8}")
     print("  " + "-" * 42)
 
-    env = TicTacToe()
-    env.reset()
+    buf_s, buf_a, buf_lp, buf_v, buf_r, buf_d, buf_m = [], [], [], [], [], [], []
 
-    for epoch in range(EPOCHS):
-        states, actions, log_probs, values, rewards, dones, masks = collect_rollout(
-            env, encoder, policy
-        )
-        advantages, returns = compute_gae(rewards, values, dones)
-        ppo_update(policy, optimizer, states, actions, log_probs, advantages, returns, masks)
+    for epoch in range(1, EPOCHS + 1):
+        p1, rewards, dones, info = collect_p1_episode(encoder, policy, TicTacToe)
+        if len(p1["states"]) == 0:
+            continue
 
-        if (epoch + 1) % EVAL_INTERVAL == 0:
-            wr, fast_pct, slow_pct = evaluate_with_uncertainty(encoder, policy, TicTacToe)
-            print(f"  {epoch+1:5d}   | {wr:>9.1%} | {fast_pct:>7.1%} | {slow_pct:>7.1%}")
+        buf_s.extend(p1["states"])
+        buf_a.extend(p1["actions"])
+        buf_lp.extend(p1["log_probs"])
+        buf_v.extend(p1["values"])
+        buf_r.extend(rewards)
+        buf_d.extend(dones)
+        buf_m.extend(p1["masks"])
+
+        if len(buf_s) >= MIN_STEPS:
+            adv, ret = compute_gae(buf_r, buf_v, buf_d)
+            ppo_update(policy, optimizer, buf_s, buf_a, buf_lp, adv, ret, buf_m)
+            buf_s, buf_a, buf_lp, buf_v, buf_r, buf_d, buf_m = [], [], [], [], [], [], []
+
+        if epoch % EVAL_INTERVAL == 0:
+            wr, fp, sp = evaluate_with_uncertainty(encoder, policy, TicTacToe)
+            print(f"  {epoch:5d}   | {wr:>9.1%} | {fp:>7.1%} | {sp:>7.1%}")
 
     os.makedirs("checkpoints", exist_ok=True)
     torch.save({

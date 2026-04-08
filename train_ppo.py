@@ -23,8 +23,9 @@ CLIP_EPS = 0.2
 ENTROPY_COEF = 0.01
 VALUE_COEF = 0.5
 UPDATE_STEPS = 4
-ROLLOUT_STEPS = 256
-EPOCHS = 200
+BATCH_SIZE = 64
+MIN_STEPS = 256
+EPOCHS = 500
 EVAL_INTERVAL = 50
 TARGET_WINRATE = 0.7
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,43 +57,46 @@ def get_valid_mask(env):
     return mask.unsqueeze(0)
 
 
-def collect_rollout(env, encoder, policy):
-    states, actions, log_probs, values, rewards, dones, masks = [], [], [], [], [], [], []
-    state = env.reset() if env.done else env.get_state()
+def collect_p1_episode(encoder, policy, env_class):
+    env = env_class()
+    state = env.reset()
+    p1 = {"states": [], "actions": [], "log_probs": [], "values": [], "masks": []}
+    done = False
 
-    for _ in range(ROLLOUT_STEPS):
-        z = encode(encoder, state)
-        valid_mask = get_valid_mask(env)
-
-        with torch.no_grad():
-            action, log_prob, value, _, _ = policy.get_action_and_value(
-                z.unsqueeze(0), valid_mask
-            )
-
+    while not done:
         if env.current_player == 1:
+            z = encode(encoder, state)
+            valid_mask = get_valid_mask(env)
+            with torch.no_grad():
+                action, log_prob, value, _, _ = policy.get_action_and_value(
+                    z.unsqueeze(0), valid_mask
+                )
             action_int = action.item()
+            p1["states"].append(z)
+            p1["actions"].append(action.squeeze())
+            p1["log_probs"].append(log_prob.squeeze())
+            p1["values"].append(value.item())
+            p1["masks"].append(valid_mask.squeeze(0))
         else:
             action_int = random.choice(env.get_valid_actions())
 
-        next_state, reward, done, info = env.step(action_int)
+        state, reward, done, info = env.step(action_int)
 
-        if env.current_player == 2:
-            reward = -reward
+    if info["winner"] == 1:
+        final_reward = 1.0
+    elif info["winner"] == 2:
+        final_reward = -1.0
+    else:
+        final_reward = 0.0
 
-        states.append(z)
-        actions.append(action.squeeze())
-        log_probs.append(log_prob.squeeze())
-        values.append(value.item())
-        rewards.append(reward)
-        dones.append(done)
-        masks.append(valid_mask.squeeze(0))
+    n = len(p1["states"])
+    rewards = [0.0] * n
+    dones = [False] * n
+    if n > 0:
+        rewards[-1] = final_reward
+        dones[-1] = True
 
-        if done:
-            state = env.reset()
-        else:
-            state = next_state
-
-    return states, actions, log_probs, values, rewards, dones, masks
+    return p1, rewards, dones, info
 
 
 def compute_gae(rewards, values, dones):
@@ -119,19 +123,20 @@ def ppo_update(policy, optimizer, states, actions, old_log_probs, advantages, re
 
     for _ in range(UPDATE_STEPS):
         idx = torch.randperm(len(states_t))
-        for start in range(0, len(states_t), 64):
-            end = min(start + 64, len(states_t))
+        for start in range(0, len(states_t), BATCH_SIZE):
+            end = min(start + BATCH_SIZE, len(states_t))
             b = idx[start:end]
 
             new_lp, ent, new_val = policy.evaluate_actions(states_t[b], actions_t[b], masks_t[b])
             ratio = (new_lp - old_lp_t[b]).exp()
             surr1 = ratio * adv_t[b]
             surr2 = torch.clamp(ratio, 1.0 - CLIP_EPS, 1.0 + CLIP_EPS) * adv_t[b]
-            policy_loss = -torch.min(surr1, surr2).mean()
-            value_loss = F.mse_loss(new_val, ret_t[b])
-            entropy_loss = -ent.mean()
 
-            loss = policy_loss + VALUE_COEF * value_loss + ENTROPY_COEF * entropy_loss
+            loss = (
+                -torch.min(surr1, surr2).mean()
+                + VALUE_COEF * F.mse_loss(new_val, ret_t[b])
+                + ENTROPY_COEF * -ent.mean()
+            )
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
@@ -149,7 +154,9 @@ def evaluate(encoder, policy, env_class, num_games=100):
                 z = encode(encoder, state)
                 valid_mask = get_valid_mask(env)
                 with torch.no_grad():
-                    action, _, _, _, _ = policy.get_action_and_value(z.unsqueeze(0), valid_mask, deterministic=True)
+                    action, _, _, _, _ = policy.get_action_and_value(
+                        z.unsqueeze(0), valid_mask, deterministic=True
+                    )
                 action_int = action.item()
             else:
                 action_int = random.choice(env.get_valid_actions())
@@ -168,22 +175,34 @@ def train_game(env_class, save_path):
     optimizer = torch.optim.Adam(policy.parameters(), lr=LR)
 
     print(f"\n  Training on {env_class.__name__}...")
-    print(f"  {'Epoch':>7} | {'Reward':>8} | {'Win Rate':>10}")
+    print(f"  {'Epoch':>7} | {'Win Rate':>10} | {'Status':>8}")
     print("  " + "-" * 32)
 
-    env = env_class()
-    env.reset()
+    buf_s, buf_a, buf_lp, buf_v, buf_r, buf_d, buf_m = [], [], [], [], [], [], []
 
-    for epoch in range(EPOCHS):
-        states, actions, log_probs, values, rewards, dones, masks = collect_rollout(
-            env, encoder, policy
-        )
-        advantages, returns = compute_gae(rewards, values, dones)
-        ppo_update(policy, optimizer, states, actions, log_probs, advantages, returns, masks)
+    for epoch in range(1, EPOCHS + 1):
+        p1, rewards, dones, info = collect_p1_episode(encoder, policy, env_class)
 
-        if (epoch + 1) % EVAL_INTERVAL == 0 or epoch == 0:
+        if len(p1["states"]) == 0:
+            continue
+
+        buf_s.extend(p1["states"])
+        buf_a.extend(p1["actions"])
+        buf_lp.extend(p1["log_probs"])
+        buf_v.extend(p1["values"])
+        buf_r.extend(rewards)
+        buf_d.extend(dones)
+        buf_m.extend(p1["masks"])
+
+        if len(buf_s) >= MIN_STEPS:
+            adv, ret = compute_gae(buf_r, buf_v, buf_d)
+            ppo_update(policy, optimizer, buf_s, buf_a, buf_lp, adv, ret, buf_m)
+            buf_s, buf_a, buf_lp, buf_v, buf_r, buf_d, buf_m = [], [], [], [], [], [], []
+
+        if epoch % EVAL_INTERVAL == 0:
             wr = evaluate(encoder, policy, env_class)
-            print(f"  {epoch+1:5d}   | {np.mean(rewards):>7.3f} | {wr:>9.1%}")
+            status = "PASS" if wr >= TARGET_WINRATE else ""
+            print(f"  {epoch:5d}   | {wr:>9.1%} | {status}")
 
     os.makedirs("checkpoints", exist_ok=True)
     torch.save({
@@ -197,11 +216,11 @@ def train_game(env_class, save_path):
 
 def main():
     print("=" * 50)
-    print("  BASIL — PPO Training (Merged)")
+    print("  BASIL — PPO Training")
     print("=" * 50)
     print(f"  Device: {DEVICE}")
     print(f"  Heads: {NUM_HEADS}")
-    print(f"  Rollout: {ROLLOUT_STEPS} steps/epoch")
+    print(f"  Min buffer: {MIN_STEPS} steps")
     print(f"  Epochs: {EPOCHS}")
 
     train_game(TicTacToe, "checkpoints/policy_ttt.pt")
