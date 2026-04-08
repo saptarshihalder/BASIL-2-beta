@@ -1,15 +1,15 @@
 {
   "num_games": 1000,
-  "wins": 778,
-  "losses": 221,
-  "draws": 1,
-  "win_rate": 0.778,
-  "loss_rate": 0.221,
-  "draw_rate": 0.001,
-  "fast_moves": 22,
-  "slow_moves": 7501,
-  "fast_pct": 0.002924365279808587,
-  "slow_pct": 0.9970756347201915,
-  "avg_jsd": 0.452022705946643,
-  "avg_game_length": 14.268
+  "wins": 757,
+  "losses": 241,
+  "draws": 2,
+  "win_rate": 0.757,
+  "loss_rate": 0.241,
+  "draw_rate": 0.002,
+  "fast_moves": 3212,
+  "slow_moves": 4431,
+  "fast_pct": 0.42025382703127045,
+  "slow_pct": 0.5797461729687295,
+  "avg_jsd": 0.45712023164166,
+  "avg_game_length": 14.529
 }
