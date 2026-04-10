@@ -1,0 +1,77 @@
+{
+  "model_sizes": {
+    "Encoder": {
+      "params": 257088,
+      "size_mb": 0.981
+    },
+    "AutoEncoder": {
+      "params": 517187,
+      "size_mb": 1.973
+    },
+    "Mamba WM": {
+      "params": 275154,
+      "size_mb": 1.05
+    },
+    "GRU WM": {
+      "params": 150994,
+      "size_mb": 0.576
+    },
+    "LSTM WM": {
+      "params": 184018,
+      "size_mb": 0.702
+    },
+    "MLP WM": {
+      "params": 84946,
+      "size_mb": 0.324
+    },
+    "Policy (5 heads)": {
+      "params": 38958,
+      "size_mb": 0.149
+    }
+  },
+  "inference_speed_ms": {
+    "encoder": 0.156,
+    "policy": 0.88,
+    "jsd": 0.656,
+    "mamba_1step": 0.656,
+    "gru_1step": 0.318,
+    "lstm_1step": 0.33,
+    "mlp_1step": 0.314,
+    "mamba_5step": 3.298,
+    "gru_5step": 1.57,
+    "lstm_5step": 1.598,
+    "mlp_5step": 1.308
+  },
+  "pipeline_latency_ms": {
+    "fast_path": 1.091,
+    "fast_with_jsd": 1.657,
+    "slow_path": 852.64,
+    "speedup_fast_vs_slow": 781.3
+  },
+  "throughput": {
+    "fast_TicTacToe": {
+      "games_per_sec": 158.86,
+      "win_rate": 0.934,
+      "total_time": 3.1
+    },
+    "adaptive_TicTacToe": {
+      "games_per_sec": 47.05,
+      "win_rate": 0.895,
+      "total_time": 4.3
+    },
+    "fast_Connect4": {
+      "games_per_sec": 92.92,
+      "win_rate": 0.832,
+      "total_time": 5.4
+    },
+    "adaptive_Connect4": {
+      "games_per_sec": 0.34,
+      "win_rate": 0.735,
+      "total_time": 579.9
+    }
+  },
+  "memory_mb": {
+    "fast_path": 16.4,
+    "slow_path": 16.3
+  }
+}
