@@ -1,0 +1,23 @@
+# Laptop / CPU run (about 30-40 minutes on 2 cores). Enough to see learning on unseen universes,
+# not enough for a paper; use configs/basil3.yaml on a GPU machine for that.
+seed: 0
+device: cpu
+threads: 2
+ch: 48
+repr_blocks: 3
+dyn_blocks: 2
+n_ricks: 4
+train_universes: 60
+iterations: 30
+games_per_iter: 32
+sims: 48
+train_steps: 100
+batch: 96
+unroll: 3
+gate_positions: 600
+gate_sims: 48
+ref_sims: 48
+gate_steps: 600
+val_universes: 12
+calib_positions: 600
+budgets: [0.1, 0.25, 0.5]

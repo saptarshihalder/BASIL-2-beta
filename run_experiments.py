@@ -20,6 +20,10 @@ from utils.uncertainty import should_plan
 from envs.tictactoe import TicTacToe
 from envs.connect4 import ConnectFour
 from envs.game_registry import pad_state, PAD_H, PAD_W, MAX_ACTIONS
+from utils.common import set_seed
+
+SEEDS = [0, 1, 2]          # every world model is trained once per seed; mean and std are reported
+JSD_THRESHOLD = 0.5        # normalised JSD; evaluate_v2.py calibrates it properly
 
 LATENT_DIM = 64
 ACTION_DIM = 16
@@ -213,8 +217,9 @@ def evaluate_agent(encoder, policy, planner, env_class, num_games, mode="adaptiv
                     valid_mask[a] = True
                 valid_mask = valid_mask.unsqueeze(0)
                 with torch.no_grad():
-                    action, _, _, logits_list = policy.get_action_and_value(z, valid_mask, deterministic=True)
-                    use_plan, _, _ = should_plan(logits_list, valid_mask)
+                    # get_action_and_value returns 5 values; the old 4-way unpack crashed here.
+                    action, _, _, logits_list, _ = policy.get_action_and_value(z, valid_mask, deterministic=True)
+                    use_plan, _, _ = should_plan(logits_list, valid_mask, JSD_THRESHOLD)
 
                 if mode == "always" and planner is not None:
                     action_int = planner.plan(z, env.get_valid_actions(), device=DEVICE)
@@ -252,37 +257,43 @@ def exp2_world_model_comparison(encoder, train_loader, val_loader):
     print("  EXP 2: World Model Comparison (Mamba vs GRU vs LSTM vs MLP)")
     print("=" * 60)
 
-    models_to_test = {
-        "Mamba": MambaWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM, STATE_DIM, NUM_BLOCKS),
-        "GRU": GRUWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM),
-        "LSTM": LSTMWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM),
-        "MLP": MLPWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM),
+    # Parameter-matched: each baseline's hidden size is picked so its parameter count is as close
+    # as possible to the Mamba model's. (The old run compared 275k against 85k-184k parameters.)
+    def n_params(m):
+        return sum(p.numel() for p in m.parameters())
+
+    target = n_params(MambaWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM, STATE_DIM, NUM_BLOCKS))
+
+    def matched(cls):
+        h = min(range(32, 1025, 8), key=lambda d: abs(n_params(cls(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, d)) - target))
+        return lambda: cls(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, h)
+
+    builders = {
+        "Mamba": lambda: MambaWorldModel(LATENT_DIM, ACTION_DIM, MAX_ACTIONS, HIDDEN_DIM, STATE_DIM, NUM_BLOCKS),
+        "GRU": matched(GRUWorldModel), "LSTM": matched(LSTMWorldModel), "MLP": matched(MLPWorldModel),
     }
-
+    keys = ["val_loss", "ttt_1step", "ttt_5step", "c4_1step", "c4_5step"]
     results = {}
-    for name, model in models_to_test.items():
-        print(f"\n  Training {name}...")
-        model = model.to(DEVICE)
-        best_val = train_world_model(model, train_loader, val_loader, name)
+    for name, build in builders.items():
+        runs = []
+        for seed in SEEDS:
+            set_seed(seed)
+            model = build().to(DEVICE)
+            print(f"\n  Training {name} ({n_params(model):,} params, seed {seed})...")
+            best_val = train_world_model(model, train_loader, val_loader, name)
+            ttt_1, ttt_5 = test_multistep(model, encoder, TicTacToe)
+            c4_1, c4_5 = test_multistep(model, encoder, ConnectFour)
+            runs.append([best_val, ttt_1, ttt_5, c4_1, c4_5])
+        runs = np.array(runs)
+        results[name] = {"params": n_params(model), "seeds": SEEDS,
+                         **{f"{k}_mean": float(runs[:, i].mean()) for i, k in enumerate(keys)},
+                         **{f"{k}_std": float(runs[:, i].std()) for i, k in enumerate(keys)}}
 
-        print(f"  Testing {name}...")
-        ttt_1, ttt_5 = test_multistep(model, encoder, TicTacToe)
-        c4_1, c4_5 = test_multistep(model, encoder, ConnectFour)
-        params = sum(p.numel() for p in model.parameters())
-
-        results[name] = {
-            "params": params,
-            "val_loss": best_val,
-            "ttt_1step": ttt_1, "ttt_5step": ttt_5,
-            "c4_1step": c4_1, "c4_5step": c4_5,
-        }
-        print(f"    TTT  1-step={ttt_1:.4f}  5-step={ttt_5:.4f}")
-        print(f"    C4   1-step={c4_1:.4f}  5-step={c4_5:.4f}")
-
-    print(f"\n  {'Model':>6} | {'Params':>8} | {'TTT 1s':>8} | {'TTT 5s':>8} | {'C4 1s':>8} | {'C4 5s':>8}")
-    print("  " + "-" * 58)
+    print(f"\n  {'Model':>6} | {'Params':>8} | {'TTT 1s':>15} | {'TTT 5s':>15} | {'C4 1s':>15} | {'C4 5s':>15}")
+    print("  " + "-" * 86)
     for name, r in results.items():
-        print(f"  {name:>6} | {r['params']:>8,} | {r['ttt_1step']:>8.4f} | {r['ttt_5step']:>8.4f} | {r['c4_1step']:>8.4f} | {r['c4_5step']:>8.4f}")
+        cells = " | ".join(f"{r[k + '_mean']:.4f}±{r[k + '_std']:.4f}" for k in keys[1:])
+        print(f"  {name:>6} | {r['params']:>8,} | {cells}")
 
     return results
 
@@ -319,6 +330,7 @@ def main():
     print(f"  Games per env: {NUM_GAMES}")
     print(f"  Training epochs: {TRAIN_EPOCHS}")
 
+    set_seed(0)
     encoder = load_encoder()
     print("Loaded encoder\n")
 
@@ -340,24 +352,11 @@ def main():
 
     exp2_results = exp2_world_model_comparison(encoder, train_loader, val_loader)
 
-    policy_path = "checkpoints/policy_ensemble.pt"
-    if not os.path.exists(policy_path):
-        policy_path = "checkpoints/policy_basic.pt"
-    ckpt = torch.load(policy_path, map_location=DEVICE, weights_only=True)
-    policy = MultiHeadPolicy(
-        latent_dim=ckpt.get("latent_dim", 64),
-        hidden_dim=ckpt.get("hidden_dim", 128),
-        num_actions=ckpt.get("num_actions", MAX_ACTIONS),
-        num_heads=ckpt.get("num_heads", 5),
-    ).to(DEVICE)
-    policy.load_state_dict(ckpt["model_state_dict"])
-    policy.eval()
-
-    from models.world_model_interface import load_world_model
-    wm = load_world_model("checkpoints/world_model.pt", str(DEVICE))
-    planner = PlanningModule(wm, num_rollouts=10, horizon=5)
-
-    exp3_results = exp3_planning_comparison(encoder, policy, planner)
+    # EXP 3 moved to evaluate_v2.py. The old version loaded the TicTacToe-only policy for
+    # Connect4, planned with random (partly illegal) imagined moves and always moved first.
+    print("\nEXP 3 now lives in evaluate_v2.py:")
+    print("  python evaluate_v2.py --games tictactoe,connect4 --opponents random,greedy,minimax")
+    exp3_results = {"moved_to": "evaluate_v2.py"}
 
     os.makedirs("experiments", exist_ok=True)
     all_results = {"exp2_world_models": exp2_results, "exp3_planning": exp3_results}

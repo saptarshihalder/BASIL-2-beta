@@ -32,6 +32,8 @@ class TicTacToe:
     def step(self, action):
         if self.done:
             raise ValueError("Game is already over")
+        if not isinstance(action, (int, np.integer)) or not 0 <= action < self.rows * self.cols:
+            raise ValueError(f"Invalid action {action}")
         row = action // self.cols
         col = action % self.cols
         if self.board[row][col] != 0:

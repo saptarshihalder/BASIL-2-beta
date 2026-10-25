@@ -51,6 +51,19 @@ class MultiHeadPolicy(nn.Module):
         entropy = dist.entropy()
         return action, log_prob, value, logits_list, entropy
 
+    def evaluate_actions_per_head(self, z, actions, valid_mask=None):
+        """Per-head log-probs (H, B) and entropies (H, B) plus the shared value (B,).
+
+        Used for bootstrapped training: each head learns from its own random half of the data,
+        so head disagreement reflects how much data supports a decision. With the old averaged
+        loss every head received the same gradient and their differences never changed.
+        """
+        logits_list, value = self.forward(z, valid_mask)
+        dists = [Categorical(logits=l) for l in logits_list]
+        log_probs = torch.stack([d.log_prob(actions) for d in dists])
+        entropies = torch.stack([d.entropy() for d in dists])
+        return log_probs, entropies, value
+
     def evaluate_actions(self, z, actions, valid_mask=None):
         logits_list, value = self.forward(z, valid_mask)
         avg_logits = torch.stack(logits_list, dim=0).mean(dim=0)

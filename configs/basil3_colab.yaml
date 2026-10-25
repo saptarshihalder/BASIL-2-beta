@@ -1,0 +1,24 @@
+# Fits an ordinary Colab GPU session better than the paper-scale config.
+# A smoke/development setting, not a trained-paper result.
+seed: 0
+device: cuda
+threads: 2
+workers: 2
+ch: 48
+repr_blocks: 3
+dyn_blocks: 2
+n_ricks: 3
+train_universes: 80
+iterations: 24
+games_per_iter: 24
+sims: 40
+train_steps: 100
+batch: 96
+unroll: 3
+gate_positions: 400
+gate_sims: 40
+ref_sims: 80
+gate_steps: 500
+val_universes: 12
+calib_positions: 400
+budgets: [0.1, 0.25, 0.5]

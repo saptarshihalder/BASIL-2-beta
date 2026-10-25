@@ -1,67 +1,66 @@
 import torch
-import torch.nn.functional as F
 
 
 class PlanningModule:
-    def __init__(self, world_model_interface, policy=None,
-                 num_rollouts=10, horizon=5, gamma=0.99):
+    """Random-shooting planner over the learned world model.
+
+    Fixes against the original version:
+      1. Sign. The environment gives +1 to whoever wins, and the world model learned exactly
+         that. Imagined steps alternate between our move (even t) and the opponent's (odd t),
+         so a predicted win on an odd step is the opponent's win and now counts as -1.
+         The old code added every win as +1, so it could not tell winning from losing.
+      2. Action range. Imagined moves are drawn only from this game's actions (7 in Connect4),
+         not from all 9 slots of the shared action embedding.
+      3. One pass per rollout (the old code simulated every rollout twice).
+    Limitation kept on purpose: this world model has no legality head, so deeper imagined moves
+    can still be illegal. BASIL-3 (basil3/) adds a legality head.
+    """
+
+    def __init__(self, world_model_interface, policy=None, num_rollouts=10, horizon=5,
+                 gamma=0.99, num_actions=9):
         self.wm = world_model_interface
         self.policy = policy
         self.num_rollouts = num_rollouts
         self.horizon = horizon
         self.gamma = gamma
+        self.num_actions = num_actions
+        self.simulations = 0  # world-model calls, for compute accounting
 
     def _pick_action(self, z, device):
+        n = self.num_actions
         if self.policy is not None:
             with torch.no_grad():
                 logits_list, _ = self.policy(z)
-                avg_logits = torch.stack(logits_list, dim=0).mean(dim=0)
-                probs = F.softmax(avg_logits, dim=-1)
-                return torch.distributions.Categorical(probs).sample()
-        return torch.randint(0, 9, (z.size(0),), device=device)
+                avg = torch.stack(logits_list, dim=0).mean(dim=0)[:, :n]
+                return torch.distributions.Categorical(logits=avg).sample()
+        return torch.randint(0, n, (z.size(0),), device=device)
+
+    @staticmethod
+    def perspective(t: int) -> float:
+        """+1 for imagined step t made by us (even t), -1 for the opponent's steps (odd t)."""
+        return 1.0 if t % 2 == 0 else -1.0
 
     def plan(self, z_t, valid_actions, device="cpu"):
         if len(valid_actions) == 0:
             return 0
-
-        best_action = valid_actions[0]
-        best_value = float('-inf')
-
+        best_action, best_value = valid_actions[0], float("-inf")
         for action in valid_actions:
-            actions_batch = []
+            total = 0.0
             for _ in range(self.num_rollouts):
-                seq = [action]
-                z_curr = z_t.clone()
                 self.wm.reset(1)
-                a_t = torch.tensor([action], dtype=torch.long, device=device)
-                z_next, _, _ = self.wm.predict(z_curr, a_t)
-                z_curr = z_next
-                for step in range(1, self.horizon):
-                    a_next = self._pick_action(z_curr, device)
-                    seq.append(a_next.item())
-                    z_next, _, _ = self.wm.predict(z_curr, a_next)
-                    z_curr = z_next
-                actions_batch.append(seq)
-
-            total_return = 0.0
-            for seq in actions_batch:
-                self.wm.reset(1)
-                actions_tensor = torch.tensor([seq], dtype=torch.long, device=device)
-                z_states, rewards, dones = self.wm.rollout(z_t, actions_tensor)
-                rewards = rewards.squeeze(0)
-                dones = dones.squeeze(0)
-                discount = 1.0
-                ret = 0.0
+                z = z_t.clone()
+                a = torch.tensor([action], dtype=torch.long, device=device)
+                ret, discount = 0.0, 1.0
                 for t in range(self.horizon):
-                    ret += discount * rewards[t].item()
+                    z, r, d = self.wm.predict(z, a)
+                    self.simulations += 1
+                    ret += discount * self.perspective(t) * r.item()
                     discount *= self.gamma
-                    if dones[t].item() > 0.5:
+                    if d.item() > 0.5:
                         break
-                total_return += ret
-
-            avg_return = total_return / self.num_rollouts
-            if avg_return > best_value:
-                best_value = avg_return
-                best_action = action
-
+                    a = self._pick_action(z, device)
+                total += ret
+            value = total / self.num_rollouts
+            if value > best_value:
+                best_value, best_action = value, action
         return best_action

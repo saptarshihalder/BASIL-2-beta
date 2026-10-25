@@ -35,7 +35,7 @@ def load_encoder():
         encoder.load_state_dict(ckpt["encoder_state_dict"])
         print(f"Loaded encoder from {ckpt_path}")
     else:
-        print(f"WARNING: No encoder at {ckpt_path}")
+        raise FileNotFoundError(f"Missing {ckpt_path}; train the encoder first")
     encoder.eval()
     for p in encoder.parameters():
         p.requires_grad = False
@@ -100,6 +100,16 @@ def extract_windows(trajectories, window_size):
         torch.stack(d_windows),
     )
 
+
+
+def split_trajectories(trajectories, val_fraction=0.1):
+    # Split games, not overlapping windows from the same game.
+    if not 0 < val_fraction < 1:
+        raise ValueError("val_fraction must be between 0 and 1")
+    if len(trajectories) < 2:
+        raise ValueError("need at least two trajectories")
+    cut = min(len(trajectories) - 1, max(1, int(len(trajectories) * (1 - val_fraction))))
+    return trajectories[:cut], trajectories[cut:]
 
 def train(model, train_loader, val_loader):
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
@@ -208,6 +218,9 @@ def train(model, train_loader, val_loader):
 
 
 def main():
+    from utils.common import set_seed
+    set_seed(0)  # reproducible data collection and initialisation
+    os.makedirs("checkpoints", exist_ok=True)
     print("=" * 58)
     print("  BASIL — Multi-Step World Model Training")
     print("=" * 58)
@@ -225,18 +238,15 @@ def main():
     random.shuffle(all_traj)
     print(f"  TTT: {len(ttt_traj)}, C4: {len(c4_traj)}, Total: {len(all_traj)} trajectories")
 
-    z_win, a_win, r_win, d_win = extract_windows(all_traj, ROLLOUT_H)
-    print(f"  Windows: {z_win.shape[0]} (each {ROLLOUT_H} steps)")
-
-    n_train = int(0.9 * len(z_win))
-    perm = torch.randperm(len(z_win))
-    z_win, a_win, r_win, d_win = z_win[perm], a_win[perm], r_win[perm], d_win[perm]
-
-    train_ds = TensorDataset(z_win[:n_train], a_win[:n_train], r_win[:n_train], d_win[:n_train])
-    val_ds = TensorDataset(z_win[n_train:], a_win[n_train:], r_win[n_train:], d_win[n_train:])
+    train_traj, val_traj = split_trajectories(all_traj, val_fraction=0.1)
+    z_train, a_train, r_train, d_train = extract_windows(train_traj, ROLLOUT_H)
+    z_val, a_val, r_val, d_val = extract_windows(val_traj, ROLLOUT_H)
+    train_ds = TensorDataset(z_train, a_train, r_train, d_train)
+    val_ds = TensorDataset(z_val, a_val, r_val, d_val)
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
-    print(f"  Train: {n_train}, Val: {len(z_win) - n_train}")
+    print(f"  Trajectories: {len(train_traj)} train, {len(val_traj)} val")
+    print(f"  Windows: {len(train_ds)} train, {len(val_ds)} val (horizon {ROLLOUT_H})")
 
     model = MambaWorldModel(
         latent_dim=LATENT_DIM, action_dim=ACTION_DIM, max_actions=MAX_ACTIONS,

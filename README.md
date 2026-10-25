@@ -1,76 +1,33 @@
-# BASIL Encoder-Decoder
+# BASIL: Budget-Aware State Imagination Learning
 
-Shared CNN autoencoder for the BASIL (Budget Aware State Imagination Learning) framework.
+An agent that acts on instinct and stops to imagine the future (plan with a learned world model)
+only when that is worth the compute.
 
-## Structure
+The repository has two parts:
 
-```
-basil/
-├── models/
-│   ├── __init__.py
-│   └── encoder_decoder.py   # Encoder, Decoder, BoardAutoEncoder
-├── envs/
-│   ├── __init__.py
-│   ├── tictactoe.py          # TicTacToe environment
-│   ├── connect4.py           # Connect4 environment
-│   └── generate_data.py      # Data collection + padding
-├── train_autoencoder.py      # Training + 7 verification checks
-└── README.md
-```
+| Part | What it is | Entry points |
+|---|---|---|
+| Original BASIL, fixed | CNN encoder → Mamba-style latent world model → 5-head PPO policy → gated random-shooting planner, on TicTacToe and Connect4 | `train_*.py`, `evaluate_v2.py`, `run_experiments.py` |
+| BASIL-3 (`basil3/`) | The **Citadel** architecture (ensemble latent world model, uncertainty-aware latent tree search, learned value-of-computation gate) on **Multiverse**, a generated family of games with rule-family-disjoint train/val/test splits | `python -m basil3.train`, `python -m basil3.evaluate` |
 
-## Quick Start
+## Quick start
 
 ```bash
-cd basil
-pip install torch numpy
-python train_autoencoder.py
+pip install torch numpy pyyaml tqdm pytest
+python -m pytest -q                                  # 21 tests
+python tests/smoke_original_pipeline.py              # fixed original pipeline, tiny settings, ~5 min
+python -m basil3.train --config configs/basil3_smoke.yaml --out runs/smoke     # ~20 s
+python -m basil3.evaluate --run runs/smoke --split val --universes 2 --openings 1 --sims 16 --opponents greedy
 ```
 
-This will:
-1. Generate 5000 random game states each from TicTacToe and Connect4
-2. Pad all states to 7×7×3 and shuffle into a mixed dataset
-3. Train the autoencoder for 30 epochs with MSE loss
-4. Save a checkpoint to `checkpoints/autoencoder.pt`
-5. Run 7 verification checks (shapes, output range, reconstruction, etc.)
+For a smaller Colab run, use `configs/basil3_colab.yaml` and the commands in [GUIDE.md](GUIDE.md).
+The Colab config is for development; it does not make the results publication-ready.
 
-## Architecture (Paper Section 3)
+`evaluate_v2.py` now reports paired score deltas against PPO-only and random-gated planning.
+`basil3.evaluate` saves per-universe scores, including the cost of uncertainty probes and tree
+search. Combine independently trained seeds with `python -m basil3.aggregate <eval files>`.
 
-**Encoder**: 7×7×3 padded board → 64-dim latent vector
-- Conv2d(3→32, 3×3, pad=1) + ReLU
-- Conv2d(32→64, 3×3, pad=1) + ReLU
-- Conv2d(64→64, 3×3, pad=1) + ReLU
-- Flatten(3136) → Linear(3136, 64)
+Training the original world model now splits complete trajectories before creating rollout windows
+so correlated windows from one game cannot land in both training and validation.
 
-**Decoder**: mirrors encoder with ConvTranspose2d, Sigmoid output
-
-**Loss**: `L_enc = ‖s − Dec(Enc(s))‖²` (MSE)
-
-## Using the Encoder in BASIL Pipeline
-
-```python
-from models.encoder_decoder import Encoder
-import torch
-
-encoder = Encoder(in_channels=3, latent_dim=64)
-ckpt = torch.load("checkpoints/autoencoder.pt")
-encoder.load_state_dict(ckpt["encoder_state_dict"])
-encoder.eval()
-
-# board_tensor: (batch, 3, 7, 7) padded CHW board
-z = encoder(board_tensor)  # (batch, 64) → feed to Mamba / PPO
-```
-
-## Hyperparameters
-
-Edit constants at the top of `train_autoencoder.py`:
-
-| Parameter | Default | Paper |
-|-----------|---------|-------|
-| LATENT_DIM | 64 | 64 |
-| BATCH_SIZE | 256 | — |
-| EPOCHS | 30 | — |
-| LR | 1e-3 | — |
-| NUM_STATES_PER_GAME | 5000 | 50000 |
-| TARGET_MSE | 0.1 | < 0.1 |
-
-For full training, set `NUM_STATES_PER_GAME=50000` and `EPOCHS=100`.
+The training protocol, comparisons and caveats are in [GUIDE.md](GUIDE.md).

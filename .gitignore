@@ -3,3 +3,6 @@ checkpoints/
 __pycache__/
 data/*.npy
 PROJECT-BETA-DEEP-LEARNING/
+runs/
+experiments/eval_v2.json
+.pytest_cache/

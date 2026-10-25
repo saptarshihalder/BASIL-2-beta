@@ -1,0 +1,23 @@
+# Tiny settings that run the whole BASIL-3 pipeline on a laptop CPU in a few minutes.
+# They only prove the plumbing works; the numbers they produce mean nothing.
+seed: 0
+device: cpu
+threads: 2
+ch: 32
+repr_blocks: 2
+dyn_blocks: 1
+n_ricks: 3
+train_universes: 12
+iterations: 2
+games_per_iter: 6
+sims: 16
+train_steps: 20
+batch: 32
+unroll: 3
+gate_positions: 60
+gate_sims: 16
+ref_sims: 16
+gate_steps: 100
+val_universes: 4
+calib_positions: 60
+budgets: [0.25, 0.5]

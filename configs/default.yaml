@@ -27,8 +27,13 @@ planning:
   gamma: 0.99
 
 uncertainty:
-  threshold: 1.0
-  fallback_max_prob: 0.6
+  # JSD is normalised to [0, 1] (divided by ln(min(heads, legal moves))). Thresholds are not
+  # hand-set any more: evaluate_v2.py calibrates them on separate calibration games so the agent
+  # plans on `target_plan_rate` of its moves, and compares against same-rate random and
+  # confidence gates. jsd_threshold is only used by benchmark.py for latency numbers.
+  target_plan_rate: 0.2
+  calibration_games: 200
+  jsd_threshold: 0.5
 
 training:
   encoder_epochs: 30
@@ -40,11 +45,13 @@ training:
   world_model_lr: 3e-4
   world_model_transitions_per_game: 50000
   world_model_games_for_multistep: 5000
-  ppo_target_winrate: 0.7
-  ppo_max_episodes: 1000
+  ppo_episodes: 3000
+  ppo_opponent: random   # random | greedy | mixed
+  seed: 0
 
 evaluation:
-  num_games: 1000
+  games_per_seat: 500
+  opponents: [random, greedy, minimax]   # minimax is TicTacToe-only
 
 games:
   tictactoe:

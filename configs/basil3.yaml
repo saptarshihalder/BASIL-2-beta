@@ -1,0 +1,29 @@
+# Paper-scale run. On one GPU plus a few CPU cores expect roughly 6-12 hours (search is CPU-bound
+# Python; run several seeds in parallel processes rather than one bigger job).
+seed: 0
+device: cuda
+threads: 4
+workers: 8           # parallel self-play processes; set to your CPU core count
+ch: 64
+repr_blocks: 4
+dyn_blocks: 2
+n_ricks: 5
+prior_scale: 1.0
+train_universes: 400
+iterations: 120
+games_per_iter: 96
+sims: 96
+temp_moves: 6
+replay_positions: 150000
+train_steps: 300
+batch: 256
+unroll: 4
+lr: 0.0007
+gate_positions: 4000
+gate_sims: 96
+ref_sims: 200
+gate_steps: 1500
+beta: 0.5
+val_universes: 40
+calib_positions: 3000
+budgets: [0.05, 0.1, 0.25, 0.5]

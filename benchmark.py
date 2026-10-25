@@ -18,6 +18,10 @@ from utils.uncertainty import should_plan, compute_jsd
 from envs.tictactoe import TicTacToe
 from envs.connect4 import ConnectFour
 from envs.game_registry import pad_state, PAD_H, PAD_W, MAX_ACTIONS
+from utils.common import GAMES, policy_path, set_seed
+
+set_seed(0)
+JSD_THRESHOLD = 0.5  # normalised JSD; only used for latency/throughput, not for reported results
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LATENT_DIM = 64
@@ -170,9 +174,7 @@ def main():
         ckpt = torch.load(ckpt_path, map_location=DEVICE, weights_only=True)
         encoder.load_state_dict(ckpt["encoder_state_dict"])
 
-    pol_path = "checkpoints/policy_ensemble.pt"
-    if not os.path.exists(pol_path):
-        pol_path = "checkpoints/policy_basic.pt"
+    pol_path = policy_path("tictactoe")  # latency is measured on TicTacToe; throughput reloads per game
     if os.path.exists(pol_path):
         ckpt = torch.load(pol_path, map_location=DEVICE, weights_only=True)
         policy.load_state_dict(ckpt["model_state_dict"])
@@ -208,7 +210,7 @@ def main():
             z_enc = encoder(x)
             mask = torch.ones(1, MAX_ACTIONS, dtype=torch.bool, device=DEVICE)
             action, _, _, logits_list, _ = policy.get_action_and_value(z_enc, mask, deterministic=True)
-            use_plan, jsd, max_p = should_plan(logits_list, mask, 1.5, 0.3)
+            use_plan, jsd, max_p = should_plan(logits_list, mask, JSD_THRESHOLD)
         return action
 
     t_jsd = benchmark_inference(fast_with_jsd, "Fast+JSD", warmup=20, runs=200)
@@ -245,16 +247,23 @@ def main():
 
     throughput = {}
     for game_name, env_class in [("TicTacToe", TicTacToe), ("Connect4", ConnectFour)]:
+        game_key = game_name.lower()
+        if os.path.exists(policy_path(game_key)):  # each game uses its own policy
+            policy.load_state_dict(torch.load(policy_path(game_key), map_location=DEVICE, weights_only=True)["model_state_dict"])
+        if planner is not None:
+            planner = PlanningModule(wm_interface, policy=policy, num_rollouts=10, horizon=5,
+                                     num_actions=GAMES[game_key][1])
         for mode in ["fast", "adaptive"]:
             n_games = 500 if mode == "fast" else 200
             start = time.perf_counter()
             wins = 0
-            for _ in range(n_games):
+            for game_idx in range(n_games):
+                seat = 1 + game_idx % 2  # both seats
                 env = env_class()
                 state_g = env.reset()
                 done = False
                 while not done:
-                    if env.current_player == 1:
+                    if env.current_player == seat:
                         padded = pad_state(state_g)
                         x = torch.tensor(padded.transpose(2, 0, 1), dtype=torch.float32).unsqueeze(0).to(DEVICE)
                         with torch.no_grad():
@@ -263,7 +272,7 @@ def main():
                             action, _, _, logits_list, _ = policy.get_action_and_value(z_enc, mask, deterministic=True)
 
                         if mode == "adaptive" and planner is not None:
-                            use_plan, _, _ = should_plan(logits_list, mask, 1.5, 0.3)
+                            use_plan, _, _ = should_plan(logits_list, mask, JSD_THRESHOLD)
                             if use_plan.item():
                                 action_int = planner.plan(z_enc, env.get_valid_actions(), device=DEVICE)
                             else:
@@ -273,7 +282,7 @@ def main():
                     else:
                         action_int = random.choice(env.get_valid_actions())
                     state_g, _, done, info = env.step(action_int)
-                if info["winner"] == 1:
+                if info["winner"] == seat:
                     wins += 1
             elapsed = time.perf_counter() - start
             gps = n_games / elapsed

@@ -37,6 +37,8 @@ class ConnectFour:
     def step(self, action):
         if self.done:
             raise ValueError("Game is already over")
+        if not isinstance(action, (int, np.integer)) or not 0 <= action < self.cols:
+            raise ValueError(f"Invalid column {action}")
         col = action
         row = self._get_drop_row(col)
         if row == -1:

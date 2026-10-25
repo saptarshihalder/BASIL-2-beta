@@ -214,6 +214,9 @@ def verify(model):
     print("=" * 64)
     return all(results)
 def main():
+    from utils.common import set_seed
+    set_seed(0)  # reproducible data collection and initialisation
+    os.makedirs("checkpoints", exist_ok=True)
     print("=" * 64)
     print("  BASIL Autoencoder Training")
     print("=" * 64)
