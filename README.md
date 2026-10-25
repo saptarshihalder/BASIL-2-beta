@@ -31,3 +31,7 @@ Training the original world model now splits complete trajectories before creati
 so correlated windows from one game cannot land in both training and validation.
 
 The training protocol, comparisons and caveats are in [GUIDE.md](GUIDE.md).
+
+## GPU training notebook
+
+[Run the BASIL-3 validation study in Colab](https://colab.research.google.com/github/saptarshihalder/BASIL-2-beta/blob/main/notebooks/basil3_train_val.ipynb). The notebook trains the Colab preset first, then the full preset, evaluates each on the validation split, and writes checkpoints and evaluation JSON to your Google Drive. Select a GPU runtime; the full preset may require a longer-running GPU machine. Validation numbers are not final test results.
