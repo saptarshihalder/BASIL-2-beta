@@ -129,7 +129,7 @@ Each component, and the failure it addresses:
   * Labels can be negative (imagination made the move worse), so the gate learns *when imagination lies*.
   * Thresholds are set on validation positions so that every gate (VOC, disagreement, confidence, random) plans on the same share of moves. That makes "budget-aware" literal and the comparison fair.
   * For deployment, `Gate(..., online_budget=B)` tracks the (1−B) quantile online (Robbins–Monro), so the long-run planning rate stays at B.
-* **Oracle reference.** The same search with Morty's priors, but on the real rules: what Citadel would do with a perfect world model. The gap between Oracle and Citadel@always is the cost of model error.
+* **Oracle reference.** The same search with Morty's priors, but on the real rules: what Citadel would do with a perfect world model. The gap between Oracle and Citadel@always is mostly model error at equal search budgets (the reference also uses real-rule search).
 
 **Prior work: be explicit about it in the paper.** None of the parts is new on its own:
 
@@ -143,7 +143,7 @@ Each component, and the failure it addresses:
 
 The defensible contribution is the combination, measured properly:
 
-* a gate trained on the *real* value of computation and compared at equal compute;
+* a gate trained on a *reference-search estimate* of the value of computation and compared at equal compute;
 * planning that is *aware of model uncertainty*;
 * evaluation on *unseen rule families* under a pre-registered protocol.
 
@@ -372,7 +372,7 @@ to this benchmark distribution, not arbitrary future games.
 
 What each outcome lets you claim:
 
-* **VOC above random-gate at equal compute on test, with the interval for Δ excluding 0:** "A gate trained on the real value of computation lets a learned-model planner spend X% of the compute for Y% of the gain on games with unseen rules." That is the paper.
+* **VOC above random-gate at equal compute on test, with the interval for Δ excluding 0:** "A gate trained on a reference-search estimate of the value of computation lets a learned-model planner spend X% of the compute for Y% of the gain on games with unseen rules." That is the paper.
 * **Citadel@always worse than Morty, but the VOC gate no worse than Morty:** "Imagination with a learned model hurts on unseen rules, and a learned gate detects when." This is still a clean, honest result.
 * **Oracle much better than Citadel@always:** imperfect learned dynamics may be a bottleneck (the oracle also uses real-rule search, so check equal search budgets). Report the gap and the ablations that narrow it.
 * **No gate beats the random gate:** uncertainty signals aren't informative about the value of computation here. This is a negative result, still publishable at a workshop if the protocol is this careful.

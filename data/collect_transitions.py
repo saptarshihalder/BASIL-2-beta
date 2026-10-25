@@ -22,8 +22,10 @@ def collect_transitions(
     z_next_list = []
     reward_list = []
     done_list = []
+    game_ids = []
 
     collected = 0
+    game_id = 0
     while collected < num_transitions:
         state = env.reset()
         done = False
@@ -60,9 +62,11 @@ def collect_transitions(
             z_next_list.append(z_next.cpu())
             reward_list.append(reward)
             done_list.append(1.0 if done else 0.0)
+            game_ids.append(game_id)
 
             state = next_state
             collected += 1
+        game_id += 1
 
     return {
         "z_t": torch.stack(z_t_list),                          # (N, 64)
@@ -70,6 +74,7 @@ def collect_transitions(
         "z_next": torch.stack(z_next_list),                      # (N, 64)
         "rewards": torch.tensor(reward_list, dtype=torch.float32),  # (N,)
         "dones": torch.tensor(done_list, dtype=torch.float32),     # (N,)
+        "game_ids": torch.tensor(game_ids, dtype=torch.long),      # (N,)
     }
 
 
@@ -88,6 +93,9 @@ def collect_mixed_transitions(
     c4 = collect_transitions(ConnectFour, encoder, num_per_game, device)
     print(f"    collected {len(c4['z_t'])} transitions")
 
+    # Give Connect4 games different IDs from TicTacToe games.
+    c4["game_ids"] += int(ttt["game_ids"].max()) + 1
+
     # Merge
     merged = {
         "z_t": torch.cat([ttt["z_t"], c4["z_t"]], dim=0),
@@ -95,6 +103,7 @@ def collect_mixed_transitions(
         "z_next": torch.cat([ttt["z_next"], c4["z_next"]], dim=0),
         "rewards": torch.cat([ttt["rewards"], c4["rewards"]], dim=0),
         "dones": torch.cat([ttt["dones"], c4["dones"]], dim=0),
+        "game_ids": torch.cat([ttt["game_ids"], c4["game_ids"]], dim=0),
     }
 
     # Shuffle

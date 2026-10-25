@@ -47,25 +47,30 @@ def load_encoder(ckpt_path: str = "checkpoints/autoencoder.pt"):
     return encoder
 
 def make_dataloaders(data: dict, val_split: float = 0.1):
-    """Split transition data into train/val DataLoaders."""
-    n = len(data["z_t"])
-    n_val = int(n * val_split)
-    n_train = n - n_val
+    """Split complete games before using their transitions for validation."""
+    if not 0 < val_split < 1:
+        raise ValueError("val_split must be between 0 and 1")
+    ids = data["game_ids"]
+    unique = torch.unique(ids)
+    if len(unique) < 2:
+        raise ValueError("need transitions from at least two games")
+    order = unique[torch.randperm(len(unique))]
+    n_val = max(1, min(len(unique) - 1, int(len(unique) * val_split)))
+    val_idx = torch.isin(ids, order[:n_val]).nonzero().flatten()
+    train_idx = torch.isin(ids, order[n_val:]).nonzero().flatten()
 
-    def make_loader(start, end, shuffle):
+    def make_loader(idx, shuffle):
         ds = TensorDataset(
-            data["z_t"][start:end],
-            data["actions"][start:end],
-            data["z_next"][start:end],
-            data["rewards"][start:end].unsqueeze(-1),
-            data["dones"][start:end].unsqueeze(-1),
+            data["z_t"][idx],
+            data["actions"][idx],
+            data["z_next"][idx],
+            data["rewards"][idx].unsqueeze(-1),
+            data["dones"][idx].unsqueeze(-1),
         )
         return DataLoader(ds, batch_size=BATCH_SIZE, shuffle=shuffle)
 
-    train_loader = make_loader(0, n_train, shuffle=True)
-    val_loader = make_loader(n_train, n, shuffle=False)
-    print(f"  Train: {n_train}, Val: {n_val}")
-    return train_loader, val_loader
+    print(f"  Train: {len(train_idx)}, Val: {len(val_idx)} ({len(unique) - n_val}/{n_val} games)")
+    return make_loader(train_idx, True), make_loader(val_idx, False)
 def train(model, train_loader, val_loader):
     """Train Mamba World Model with L_world loss (paper Eq. 2)."""
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)

@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from train_world_model_multistep import split_trajectories
 from models.encoder_decoder import Encoder
 from models.mamba_world_model import MambaWorldModel
 from models.baselines import GRUWorldModel, LSTMWorldModel, MLPWorldModel
@@ -340,15 +341,14 @@ def main():
     all_traj = ttt_traj + c4_traj
     random.shuffle(all_traj)
 
-    z_win, a_win, r_win, d_win = extract_windows(all_traj, ROLLOUT_H)
-    n_train = int(0.9 * len(z_win))
-    perm = torch.randperm(len(z_win))
-    z_win, a_win, r_win, d_win = z_win[perm], a_win[perm], r_win[perm], d_win[perm]
-    train_ds = TensorDataset(z_win[:n_train], a_win[:n_train], r_win[:n_train], d_win[:n_train])
-    val_ds = TensorDataset(z_win[n_train:], a_win[n_train:], r_win[n_train:], d_win[n_train:])
+    train_traj, val_traj = split_trajectories(all_traj, 0.1)
+    train_data = extract_windows(train_traj, ROLLOUT_H)
+    val_data = extract_windows(val_traj, ROLLOUT_H)
+    train_ds = TensorDataset(*train_data)
+    val_ds = TensorDataset(*val_data)
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
-    print(f"  Windows: {len(z_win)} (train={n_train}, val={len(z_win)-n_train})")
+    print(f"  Windows: {len(train_ds) + len(val_ds)} (train={len(train_ds)}, val={len(val_ds)})")
 
     exp2_results = exp2_world_model_comparison(encoder, train_loader, val_loader)
 
