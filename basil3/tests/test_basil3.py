@@ -143,6 +143,57 @@ def test_imagination_agent_only_plays_legal_moves():
             assert g.legal_mask()[a]
 
 
+def test_pinned_universe_dna_persists_across_imagination():
+    torch.manual_seed(0)
+    net = Citadel(ch=16, repr_blocks=1, dyn_blocks=1, n_ricks=2).eval()
+    g = opening(universes("val", 1)[0], 0)
+    obs = torch.as_tensor(g.encode()[None])
+    s0 = net.h(obs)
+    assert torch.allclose(s0[:, -10:], obs[:, 3:13])
+    s1, _ = net.ricks[0](s0, torch.tensor([g.legal_actions()[0]]))
+    assert torch.allclose(s1[:, -10:], obs[:, 3:13])
+
+
+def test_meeseeks_trace_fit_and_anytime_agent():
+    from basil3.meeseeks import AnytimeAgent, calibrate_all_rules, fit_halt_model, build_anytime_rule, run_trace
+    torch.manual_seed(0)
+    net = Citadel(ch=16, repr_blocks=1, dyn_blocks=1, n_ricks=2).eval()
+    rng = np.random.default_rng(0)
+    unis = universes("val", 2)
+    traces = [run_trace(net, "latent", opening(u, k), max_sims=12, check_every=4, beta=0.5, rng=rng)
+              for u in unis for k in range(3)]
+    X = np.concatenate([t["feats"] for t in traces], 0)
+    R = np.concatenate([t["regret"] for t in traces], 0)
+    A = np.concatenate([t["agree"] for t in traces], 0)
+    G = np.concatenate([np.full(len(t["sims"]), i) for i, t in enumerate(traces)])
+    model, stats = fit_halt_model(X, R, A, G, rng, steps=50, hidden=32)
+    assert "heldout_regret_corr_live" in stats
+    cal = calibrate_all_rules(traces, model, max_sims=12, budgets=[0.25, 0.5])
+    rule = build_anytime_rule("meeseeks", "0.25", 12, cal, model)
+    g = opening(unis[0], 0)
+    a = AnytimeAgent(net, "latent", rule, 12, 4, rng=rng).act(g.encode(), g.legal_mask())
+    assert g.legal_mask()[a]
+
+
+def test_central_finite_curve_never_eliminates_true_universe():
+    from basil3.cronenberg import CentralFiniteCurve, infer_geometry, mask_rules, play_cronenberg_match
+    torch.manual_seed(0)
+    net = Citadel(ch=16, repr_blocks=1, dyn_blocks=1, n_ricks=2).eval()
+    for u in universes("val", 3):
+        g = Game(u)
+        H, W, blk = infer_geometry(mask_rules(g.encode()))
+        cfc = CentralFiniteCurve(H, W, blk)
+        n0 = cfc.n_alive
+        cfc.observe_turn(mask_rules(g.encode()), g.legal_mask())
+        assert 1 <= cfc.n_alive < n0
+        assert any(
+            (c.gravity, c.wrap_h, c.wrap_v, c.shapes) == (u.gravity, u.wrap_h, u.wrap_v, u.shapes)
+            for c, ok in zip(cfc.candidates, cfc.alive) if ok
+        )
+    recs = play_cronenberg_match(net, universes("val", 1)[0], episodes=3, mode="cfc_citadel", opp_spec="random", sims=8)
+    assert len(recs) == 3 and recs[-1]["entropy_bits_end"] <= recs[0]["entropy_bits_start"]
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in dict(globals()).items() if k.startswith("test_")]

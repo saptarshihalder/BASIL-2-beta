@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use BASIL-3 or the Multiverse benchmark in your research, please cite this work."
+title: "BASIL-3: Adaptive Test-Time Compute and In-Context Rule Induction for Latent World-Model Planning"
+authors:
+  - family-names: "Halder"
+    given-names: "Saptarshi"
+version: "0.3.0"
+date-released: "2026-10-29"
+repository-code: "https://github.com/saptarshihalder/BASIL-2-beta"
+keywords:
+  - model-based reinforcement learning
+  - monte carlo tree search
+  - metareasoning
+  - value of computation
+  - anytime halting
+  - bayesian rule induction

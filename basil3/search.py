@@ -15,15 +15,16 @@ flip sign at every ply (negamax).
 import numpy as np
 import torch
 
-from .multiverse import N_ACTIONS, Game
+from .multiverse import N_ACTIONS, Game, PAD
+from .nets import torus_tactical_field
 
 
 class Node:
-    __slots__ = ("state", "P", "legal", "children", "N", "W", "v", "terminal", "tv")
+    __slots__ = ("state", "P", "legal", "children", "N", "W", "v", "terminal", "tv", "sd")
 
     def __init__(self):
         self.children, self.N, self.W = {}, 0, 0.0
-        self.terminal, self.tv, self.v = False, 0.0, 0.0
+        self.terminal, self.tv, self.v, self.sd = False, 0.0, 0.0, 0.0
         self.state = self.P = self.legal = None
 
 
@@ -45,8 +46,15 @@ def _select(node, c_puct):
     return int(np.argmax(Q + c_puct * node.P * np.sqrt(node.N + 1) / (1 + n)))
 
 
-def search(adapter, root_input, sims, c_puct=1.5, dirichlet=None, rng=None, beta=0.0):
-    """Returns (visit counts over actions, mean value per action, number of model expansions)."""
+def search(adapter, root_input, sims, c_puct=1.5, dirichlet=None, rng=None, beta=0.0,
+           check_every=None, on_check=None):
+    """Returns (visit counts over actions, mean value per action, number of model expansions).
+
+    Anytime mode: if `on_check` is given, it is called as on_check(root, sims_done) before the
+    first simulation and after every `check_every` simulations; returning True stops the search.
+    A search stopped at t simulations is exactly the first t simulations of the uninterrupted
+    search with the same random stream, so halting rules can be replayed offline from one trace.
+    """
     root = Node()
     _fill(root, adapter.root(root_input))
     if len(root.legal) == 0:
@@ -55,7 +63,9 @@ def search(adapter, root_input, sims, c_puct=1.5, dirichlet=None, rng=None, beta
         alpha, eps = dirichlet
         root.P = (1 - eps) * root.P + eps * rng.dirichlet([alpha] * len(root.legal))
     expansions = 0
-    for _ in range(sims):
+    for i in range(sims):
+        if on_check is not None and i % check_every == 0 and on_check(root, i):
+            break
         node, path = root, [root]
         while True:
             a = int(node.legal[_select(node, c_puct)])
@@ -64,7 +74,8 @@ def search(adapter, root_input, sims, c_puct=1.5, dirichlet=None, rng=None, beta
                 out = adapter.step(node.state, a)
                 expansions += 1
                 child = Node()
-                value = out["q"] - beta * out.get("q_std", 0.0)
+                child.sd = float(out.get("q_std", 0.0))      # model disagreement on this edge
+                value = out["q"] - beta * child.sd
                 if out["terminal"]:
                     child.terminal, child.tv = True, value
                 else:
@@ -82,6 +93,9 @@ def search(adapter, root_input, sims, c_puct=1.5, dirichlet=None, rng=None, beta
             n.W += value
             value = -value
         root.N += 1
+    else:
+        if on_check is not None:                  # final look at the completed search
+            on_check(root, sims)
     visits, q = np.zeros(N_ACTIONS), np.zeros(N_ACTIONS)
     for a, ch in root.children.items():
         visits[a], q[a] = ch.N, ch.W / max(ch.N, 1)
@@ -112,15 +126,28 @@ class SimAdapter:
     def __init__(self, net=None, device="cpu", rng=None):
         self.net, self.device, self.rng = net, device, rng
 
-    def _eval(self, g):
+    def _eval(self, g, tactical=False):
         legal = g.legal_mask()
         if self.net is None:
             return legal.astype(np.float64), rollout_value(g, self.rng), legal
-        p, v, _ = net_eval(self.net, g.encode(), legal, self.device)
-        return p, v, legal
+        obs = g.encode()
+        if not tactical:
+            p, v, _ = net_eval(self.net, obs, legal, self.device)
+            return p, v, legal
+        with torch.no_grad():
+            obs_t = torch.as_tensor(obs[None], device=self.device)
+            s = self.net.h(obs_t)
+            logits, v, _ = self.net.f(s)
+            v_tac, tac_w, pol_boost = torus_tactical_field(
+                obs_t[:, 0:3], obs_t[:, 13:14], obs_t[:, 3:13]
+            )
+            vt, tw, vn = float(v_tac[0]), float(tac_w[0]), float(v[0])
+            v_out = tw * (0.85 * vt + 0.15 * vn) + (1.0 - tw) * (0.65 * vn + 0.35 * vt)
+            logits = (logits[0] + pol_boost[0]).masked_fill(~torch.as_tensor(legal, device=self.device), float("-inf"))
+            return torch.softmax(logits, -1).cpu().numpy(), float(np.clip(v_out, -1.0, 1.0)), legal
 
     def root(self, g):
-        p, v, legal = self._eval(g)
+        p, v, legal = self._eval(g, tactical=False)
         return dict(state=g, priors=p, legal=legal, value=v)
 
     def step(self, g, a):
@@ -129,7 +156,7 @@ class SimAdapter:
             return dict(terminal=True, q=1.0)
         if g2.done:
             return dict(terminal=True, q=0.0)
-        p, v, legal = self._eval(g2)
+        p, v, legal = self._eval(g2, tactical=True)
         return dict(terminal=False, q=-v, state=g2, priors=p, legal=legal, value=v)
 
 

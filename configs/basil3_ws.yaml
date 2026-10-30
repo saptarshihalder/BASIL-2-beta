@@ -1,0 +1,29 @@
+# Workshop-scale run for a 20-core CPU machine (three seeds run in parallel, ~5-7 h each).
+# Self-play is cheap on CPU; training steps dominate, so the replay ratio is kept moderate.
+seed: 0
+device: cpu
+threads: 4
+workers: 4
+ch: 64
+repr_blocks: 3
+dyn_blocks: 2
+n_ricks: 4
+prior_scale: 1.0
+train_universes: 300
+iterations: 80
+games_per_iter: 192
+sims: 64
+temp_moves: 6
+replay_positions: 100000
+train_steps: 120
+batch: 256
+unroll: 3
+lr: 0.001
+gate_positions: 1500
+gate_sims: 64
+ref_sims: 128
+gate_steps: 800
+beta: 0.5
+val_universes: 30
+calib_positions: 1500
+budgets: [0.1, 0.25, 0.5]

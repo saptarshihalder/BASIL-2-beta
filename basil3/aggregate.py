@@ -55,7 +55,11 @@ def combine(paths, reference="morty"):
 
     rng = np.random.default_rng(2718)
     rows = []
-    for key in sorted(grouped):
+    ordered_keys = [(r["agent"], r["opponent"]) for r in runs[0]["results"] if (r["agent"], r["opponent"]) in grouped]
+    for k in sorted(grouped):
+        if k not in ordered_keys:
+            ordered_keys.append(k)
+    for key in ordered_keys:
         agent, opponent = key
         x = np.array(grouped[key], dtype=float)
         row = {"agent": agent, "opponent": opponent, "seeds": len(runs),
@@ -68,6 +72,7 @@ def combine(paths, reference="morty"):
                 raise ValueError(f"Missing reference {reference} vs {opponent}")
             diff = x - np.array(grouped[ref_key])
             row["delta"] = round(float(diff.mean()), 4)
+            row[f"delta_vs_{reference}"] = row["delta"]
             row["delta_ci95"] = interval(diff, rng)
         rows.append(row)
     return {"reference": reference, "files": paths, "eval_args": {k: runs[0]["args"].get(k) for k in keys}, "results": rows}

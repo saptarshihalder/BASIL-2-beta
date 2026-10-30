@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "basil3"
+version = "0.3.0"
+description = "BASIL-3: Budget-Aware State Imagination Learning with Toroidal Latent World Models, Anytime Halting (Meeseeks), and In-Context Bayesian Rule Induction (Central Finite Curve)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Saptarshi Halder" }
+]
+dependencies = [
+  "torch>=2.2",
+  "numpy>=1.24",
+  "PyYAML>=6.0",
+  "tqdm>=4.65",
+  "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+basil3-train = "basil3.train:main"
+basil3-evaluate = "basil3.evaluate:main"
+basil3-aggregate = "basil3.aggregate:main"
+
+[tool.setuptools.packages.find]
+include = ["basil3*", "models*", "envs*", "utils*", "data*"]

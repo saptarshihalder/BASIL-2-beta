@@ -32,15 +32,17 @@ import torch
 
 from .agents import (CitadelAgent, Gate, GreedyAgent, MortyAgent, OracleAgent, RandomAgent, UCTAgent,
                      VOCModel)
+from .meeseeks import AnytimeAgent, HaltModel, build_anytime_rule
 from .multiverse import N_ACTIONS, opening, universes
 from .train import load_ckpt
 
 _EVAL_SALT = 31_337
 DEFAULT_AGENTS = ("morty,citadel@always,citadel@voc:0.25,citadel@disagreement:0.25,"
                   "citadel@confidence:0.25,citadel@random:0.25,oracle")
+ANYTIME_KINDS = ("meeseeks", "meeseeks_agree", "meeseeks_pre", "share", "unreach", "confgate", "fixed", "fixed_sims")
 
 
-def make_player(spec, net, gate_ck, voc, args, rng, device):
+def make_player(spec, net, gate_ck, voc, args, rng, device, meeseeks_ck=None, meeseeks_models=None):
     if spec == "morty":
         return MortyAgent(net, device)
     if spec == "oracle":
@@ -51,6 +53,18 @@ def make_player(spec, net, gate_ck, voc, args, rng, device):
         return GreedyAgent(rng)
     if spec.startswith("uct-"):
         return UCTAgent(int(spec[4:]), rng)
+    if spec.startswith("oracle@"):
+        g = spec.split("@", 1)[1]
+        kind, budget = g.split(":")
+        budget_str = f"{float(budget):g}"
+        if meeseeks_ck is None and kind != "fixed_sims":
+            raise FileNotFoundError("meeseeks.pt missing: run python -m basil3.train --stage meeseeks")
+        m_mode = meeseeks_ck["modes"]["sim"] if meeseeks_ck is not None else None
+        max_sims = meeseeks_ck["max_sims"] if meeseeks_ck is not None else args.sims
+        check_every = meeseeks_ck["check_every"] if meeseeks_ck is not None else 4
+        m_mod = meeseeks_models["sim"] if meeseeks_models is not None else None
+        rule = build_anytime_rule(kind, budget_str, max_sims, m_mode, m_mod)
+        return AnytimeAgent(net, "sim", rule, max_sims, check_every, beta=0.0, device=device, rng=rng)
     if spec.startswith("citadel@"):
         g = spec.split("@", 1)[1]
         if g in ("always", "never"):
@@ -58,6 +72,16 @@ def make_player(spec, net, gate_ck, voc, args, rng, device):
         else:
             kind, budget = g.split(":")
             budget = float(budget)
+            if kind in ANYTIME_KINDS:
+                budget_str = f"{budget:g}"
+                if meeseeks_ck is None and kind != "fixed_sims":
+                    raise FileNotFoundError("meeseeks.pt missing: run python -m basil3.train --stage meeseeks")
+                m_mode = meeseeks_ck["modes"]["latent"] if meeseeks_ck is not None else None
+                max_sims = meeseeks_ck["max_sims"] if meeseeks_ck is not None else args.sims
+                check_every = meeseeks_ck["check_every"] if meeseeks_ck is not None else 4
+                m_mod = meeseeks_models["latent"] if meeseeks_models is not None else None
+                rule = build_anytime_rule(kind, budget_str, max_sims, m_mode, m_mod)
+                return AnytimeAgent(net, "latent", rule, max_sims, check_every, beta=args.beta, device=device, rng=rng)
             if kind == "random":
                 gate = Gate("random", rate=budget, rng=rng)
             else:
@@ -96,7 +120,7 @@ def bootstrap_ci(per_universe, n_boot=2000, seed=0):
 
 def run_hash(args):
     h = hashlib.sha256()
-    for name in ("citadel.pt", "gate.pt"):
+    for name in ("citadel.pt", "gate.pt", "meeseeks.pt"):
         path = os.path.join(args.run, name)
         if os.path.exists(path):
             with open(path, "rb") as f:
@@ -118,7 +142,7 @@ def main(argv=None):
     ap.add_argument("--opponents", default="greedy,uct-200")
     ap.add_argument("--reference", default="morty")
     ap.add_argument("--sims", type=int, default=64)
-    ap.add_argument("--beta", type=float, default=0.5)
+    ap.add_argument("--beta", type=float, default=0.25)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--preregister", action="store_true")
     ap.add_argument("--out", default=None)
@@ -150,6 +174,16 @@ def main(argv=None):
         voc = VOCModel()
         voc.load_state_dict(gate_ck["voc"])
         voc.eval()
+    meeseeks_path = os.path.join(args.run, "meeseeks.pt")
+    meeseeks_ck = torch.load(meeseeks_path, map_location="cpu", weights_only=False) if os.path.exists(meeseeks_path) else None
+    meeseeks_models = None
+    if meeseeks_ck is not None:
+        meeseeks_models = {}
+        for kind, mdata in meeseeks_ck["modes"].items():
+            hm = HaltModel()
+            hm.load_state_dict(mdata["model"])
+            hm.eval()
+            meeseeks_models[kind] = hm
 
     unis = universes(args.split, args.universes)
     train_fams = set(ck["train_families"])
@@ -158,6 +192,8 @@ def main(argv=None):
         assert repr(u.family()) not in train_fams, f"LEAK: universe {u.seed} has a training rule family"
     if gate_ck is not None and args.split == "test":
         assert not set(gate_ck["val_seeds"]) & {u.seed for u in unis}, "LEAK: calibration universe in test"
+    if meeseeks_ck is not None and args.split == "test":
+        assert not set(meeseeks_ck["val_seeds"]) & {u.seed for u in unis}, "LEAK: Meeseeks calibration universe in test"
 
     agents, opponents = args.agents.split(","), args.opponents.split(",")
     per_uni = {(a, o): {u.seed: [] for u in unis} for a in agents for o in opponents}
@@ -171,8 +207,8 @@ def main(argv=None):
                     for ai, a in enumerate(agents):
                         rng_agent = np.random.default_rng([_EVAL_SALT, u.seed, k, seat, ai])
                         rng_opp = np.random.default_rng([_EVAL_SALT, u.seed, k, seat, 10_000])   # same for every agent
-                        agent = make_player(a, net, gate_ck, voc, args, rng_agent, device)
-                        opp = make_player(o, net, gate_ck, voc, args, rng_opp, device)
+                        agent = make_player(a, net, gate_ck, voc, args, rng_agent, device, meeseeks_ck, meeseeks_models)
+                        opp = make_player(o, net, gate_ck, voc, args, rng_opp, device, meeseeks_ck, meeseeks_models)
                         r, bad, secs, moves = play(agent, opp, u, k, seat)
                         st = stats[(a, o)]
                         st["w" if r > 0 else "d" if r == 0 else "l"] += 1

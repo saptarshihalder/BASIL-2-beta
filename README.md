@@ -1,37 +1,53 @@
 # BASIL: Budget-Aware State Imagination Learning
 
-An agent that acts on instinct and stops to imagine the future (plan with a learned world model)
-only when that is worth the compute.
+> **Know When to Imagine, Know Which World You Are In:** Adaptive Test-Time Compute and In-Context Rule Induction for Latent World-Model Planning
 
-The repository has two parts:
+An agent deployed into an unfamiliar environment faces three coupled questions at every move: **what are the laws of this world**, **is deliberation worth the compute right now**, and **when has enough thinking been done**?
 
-| Part | What it is | Entry points |
-|---|---|---|
-| Original BASIL, fixed | CNN encoder → Mamba-style latent world model → 5-head PPO policy → gated random-shooting planner, on TicTacToe and Connect4 | `train_*.py`, `evaluate_v2.py`, `run_experiments.py` |
-| BASIL-3 (`basil3/`) | The **Citadel** architecture (ensemble latent world model, uncertainty-aware latent tree search, learned value-of-computation gate) on **Multiverse**, a generated family of games with rule-family-disjoint train/val/test splits | `python -m basil3.train`, `python -m basil3.evaluate` |
+## Architecture Overview (`basil3/`)
 
-## Quick start
+| Component | Code Name | Paper Mechanism | Module |
+|---|---|---|---|
+| **World Model & Fast Policy** | **Citadel v2** (`Morty` + `Council of Ricks`) | **Toroidal Portal-Aware & Translation-Equivariant World Model** with pinned 10-plane universe DNA, variable-boundary portal convolutions ($5\times 5$, $6\times 6$, $7\times 7$), translation-equivariant heads, and contrastive counterfactual action probes | [`basil3/nets.py`](basil3/nets.py) |
+| **Anytime Compute Halting** | **Mr. Meeseeks** | **Self-Supervised Anytime Halting Gate** trained on prefix search traces ($R_t = Q_T(a_T) - Q_T(a_t)$ and $A_t = \mathbb{I}[a_t = a_T]$) over 24 live tree telemetry features (visit concentration, $Q$-gaps, value drift, ensemble disagreement) | [`basil3/meeseeks.py`](basil3/meeseeks.py) |
+| **In-Context Rule Induction** | **Cronenberg Mode + Central Finite Curve** | **Exact Bayesian Rule Posterior $P(u \mid h_t)$** over hidden candidate rule universes ($\le 90$ hypotheses per geometry) paired with **Multiverse Thompson Search** | [`basil3/cronenberg.py`](basil3/cronenberg.py) |
+| **Procedural Benchmark** | **Multiverse** | Rule-family-disjoint procedural grid games (tetromino win sets, gravity, horizontal/vertical portals, blocked cells) with cryptographic one-shot test lock | [`basil3/multiverse.py`](basil3/multiverse.py) |
+
+## Quick Start
 
 ```bash
-pip install torch numpy pyyaml tqdm pytest
-python -m pytest -q                                  # 21 tests
-python tests/smoke_original_pipeline.py              # fixed original pipeline, tiny settings, ~5 min
-python -m basil3.train --config configs/basil3_smoke.yaml --out runs/smoke     # ~20 s
-python -m basil3.evaluate --run runs/smoke --split val --universes 2 --openings 1 --sims 16 --opponents greedy
+pip install -e ".[dev]"
+python -m pytest -q                                  # 25 unit & leak-check tests
+
+# Smoke run (~25s on CPU: self-play + pre-search VOC gate + Mr. Meeseeks anytime halting)
+python -m basil3.train --config configs/basil3_smoke.yaml --out runs/smoke --stage all
+
+# Evaluate fast policy, pre-search gates, and anytime halting rules on unseen rule families
+python -m basil3.evaluate --run runs/smoke --split val --universes 4 --openings 1 --sims 16 \
+  --agents morty,citadel@always,citadel@voc:0.25,citadel@meeseeks:0.25,oracle@meeseeks:0.25 \
+  --opponents greedy
+
+# Evaluate Cronenberg Mode (hidden rules) with Central Finite Curve Bayesian rule induction
+python -m basil3.cronenberg --run runs/smoke --split val --universes 4 --episodes 6 --sims 16
 ```
 
-For a smaller Colab run, use `configs/basil3_colab.yaml` and the commands in [GUIDE.md](GUIDE.md).
-The Colab config is for development; it does not make the results publication-ready.
+## Reproducing the Multi-Seed Study & Paper Figures
 
-`evaluate_v2.py` now reports paired score deltas against PPO-only and random-gated planning.
-`basil3.evaluate` saves per-universe scores, including the cost of uncertainty probes and tree
-search. Combine independently trained seeds with `python -m basil3.aggregate <eval files>`.
+```bash
+# 1. Train 3 independent seeds (self-play + VOC gate + Mr. Meeseeks stage)
+for s in 0 1 2; do
+  python -m basil3.train --config configs/basil3_v2.yaml --seed $s --out results/basil3_v2/seed_$s --stage all --resume
+done
 
-Training the original world model now splits complete trajectories before creating rollout windows
-so correlated windows from one game cannot land in both training and validation.
+# 2. Evaluate all 3 seeds on held-out rule families, run Cronenberg hidden-rule matches,
+#    aggregate with paired bootstrap CIs, and generate publication figures & LaTeX tables
+python -m basil3.run_study_eval --root results/basil3_v2 --split val --universes 12 --openings 2 --sims 48
+```
 
-The training protocol, comparisons and caveats are in [GUIDE.md](GUIDE.md).
+## Repository Structure
 
-## GPU training notebook
-
-[Run the BASIL-3 validation study in Colab](https://colab.research.google.com/github/saptarshihalder/BASIL-2-beta/blob/main/notebooks/basil3_train_val.ipynb). The notebook trains the Colab preset first, then the full preset, evaluates each on the validation split, and writes checkpoints and evaluation JSON to your Google Drive. Select a GPU runtime; the full preset may require a longer-running GPU machine. Validation numbers are not final test results.
+* [`basil3/`](basil3/) — BASIL-3 (Citadel v2, Mr. Meeseeks, Cronenberg Mode & Central Finite Curve, Multiverse benchmark, leak-checked evaluation & aggregation).
+* [`paper/`](paper/) — LaTeX manuscript ([`paper/main.tex`](paper/main.tex)), bibliography ([`paper/references.bib`](paper/references.bib)), and generated figures/tables.
+* [`configs/`](configs/) — Reproducible experiment configurations (`basil3_v2.yaml`, `basil3.yaml`, `basil3_colab.yaml`, `basil3_smoke.yaml`).
+* [`GUIDE.md`](GUIDE.md) — Detailed protocol documentation, leak prevention guarantees, and legacy pipeline notes.
+* [`notebooks/basil3_train_val.ipynb`](notebooks/basil3_train_val.ipynb) — Reproducible Colab notebook.

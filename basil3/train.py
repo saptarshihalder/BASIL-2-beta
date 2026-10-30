@@ -28,6 +28,7 @@ import torch.nn.functional as F
 import yaml
 
 from .agents import FEATURES, VOCModel, gate_features
+from .meeseeks import LIVE_FEATURES, calibrate_all_rules, fit_halt_model, run_trace
 from .multiverse import (GENERATOR_VERSION, N_ACTIONS, Game, greedy_move, opening, universe_from_seed,
                          universes)
 from .nets import build
@@ -42,6 +43,7 @@ DEFAULTS = dict(
     w_policy=1.0, w_value=1.0, w_legal=0.5, w_win=1.0, w_cons=2.0,
     gate_positions=2000, gate_sims=64, ref_sims=64, beta=0.5, gate_steps=600,
     budgets=[0.1, 0.25, 0.5], val_universes=30, calib_positions=1500,
+    check_every=4, meeseeks_positions=None, meeseeks_val_positions=None, meeseeks_steps=2000,
 )
 
 
@@ -76,41 +78,81 @@ def load_ckpt(path, device="cpu"):
 
 
 # ----------------------------------------------------------------------------- self-play
+def _tactical_masks(g: Game):
+    """For a training position, return boolean masks over N_ACTIONS for 1-ply wins and 1-ply blocks."""
+    wmask = np.zeros(N_ACTIONS, dtype=bool)
+    bmask = np.zeros(N_ACTIONS, dtype=bool)
+    me, opp = g.to_move, 3 - g.to_move
+    for c in g.legal_cells():
+        a = g.to_action(c)
+        if g.completes(c, me):
+            wmask[a] = True
+        if g.completes(c, opp):
+            bmask[a] = True
+    return wmask, bmask
+
+
 def self_play_game(net, u, cfg, rng, device):
     g = Game(u)
-    obs, legal, acts, pis, movers, wins = [], [], [], [], [], []
+    obs, legal, acts, pis, movers, wins, wmasks = [], [], [], [], [], [], []
     while not g.done:
         o, m = g.encode(), g.legal_mask()
+        wmask, bmask = _tactical_masks(g)
         visits, _, _ = search(SimAdapter(net, device), g, cfg["sims"],
                               dirichlet=(cfg["dir_alpha"], cfg["dir_eps"]), rng=rng)
         pi = visits / visits.sum()
-        a = int(rng.choice(N_ACTIONS, p=pi)) if g.moves < cfg["temp_moves"] else int(np.argmax(visits))
+        # Tactical expert sharpening on training games: prevent low-sim search from diluting
+        # immediate 1-ply wins or missing forced 1-ply blocks during early iterations.
+        if wmask.any():
+            w_dist = wmask.astype(np.float64) / wmask.sum()
+            pi = 0.2 * pi + 0.8 * w_dist
+        elif bmask.any():
+            b_dist = bmask.astype(np.float64) / bmask.sum()
+            pi = 0.35 * pi + 0.65 * b_dist
+        pi = pi / pi.sum()
+        if wmask.any():
+            win_acts = np.flatnonzero(wmask)
+            a = int(win_acts[rng.integers(len(win_acts))])
+        else:
+            a = int(rng.choice(N_ACTIONS, p=pi)) if g.moves < cfg["temp_moves"] else int(np.argmax(pi))
         obs.append(o); legal.append(m); pis.append(pi); acts.append(a); movers.append(g.to_move)
+        wmasks.append(wmask)
         wins.append(g.step(a))
     obs.append(g.encode()); legal.append(np.zeros(N_ACTIONS, dtype=bool)); movers.append(g.to_move)
     z = [0.0 if g.winner == 0 else (1.0 if mv == g.winner else -1.0) for mv in movers]
     return dict(obs=np.stack(obs), legal=np.stack(legal), act=np.array(acts), pi=np.stack(pis).astype(np.float32),
-                z=np.array(z, dtype=np.float32), win=np.array(wins, dtype=np.float32), universe=u.seed)
+                z=np.array(z, dtype=np.float32), win=np.array(wins, dtype=np.float32),
+                wmask=np.stack(wmasks), universe=u.seed)
+
+
+_WORKER_NET = None
+_WORKER_CFG = None
 
 
 def _worker_games(job):
     """Self-play in a separate process (CPU, one thread). job = (weights, net config, cfg, [(universe seed, rng seed)])."""
+    global _WORKER_NET, _WORKER_CFG
     state, net_cfg, cfg, todo = job
     torch.set_num_threads(1)
-    net = build(net_cfg)
-    net.load_state_dict(state)
-    net.eval()
-    return [self_play_game(net, universe_from_seed(us), cfg, np.random.default_rng(rs), "cpu") for us, rs in todo]
+    if _WORKER_NET is None or _WORKER_CFG != net_cfg:
+        _WORKER_NET = build(net_cfg).eval()
+        _WORKER_CFG = dict(net_cfg)
+    _WORKER_NET.load_state_dict(state)
+    return [self_play_game(_WORKER_NET, universe_from_seed(us), cfg, np.random.default_rng(rs), "cpu") for us, rs in todo]
 
 
-def generate_games(net, pool, cfg, rng, device):
+def generate_games(net, pool, cfg, rng, device, worker_pool=None):
     jobs = [(pool[int(rng.integers(len(pool)))].seed, int(rng.integers(2**62))) for _ in range(cfg["games_per_iter"])]
     W = cfg["workers"]
     if W <= 1:
         return [self_play_game(net, universe_from_seed(us), cfg, np.random.default_rng(rs), device) for us, rs in jobs]
     state = {k: v.detach().cpu() for k, v in net.state_dict().items()}
-    with mp.get_context("spawn").Pool(W) as workers:
-        chunks = workers.map(_worker_games, [(state, net.config, cfg, jobs[i::W]) for i in range(W)])
+    tasks = [(state, net.config, cfg, jobs[i::W]) for i in range(W)]
+    if worker_pool is not None:
+        chunks = worker_pool.map(_worker_games, tasks)
+    else:
+        with mp.get_context("spawn").Pool(W) as workers:
+            chunks = workers.map(_worker_games, tasks)
     return [g for chunk in chunks for g in chunk]
 
 
@@ -134,11 +176,27 @@ class Replay:
         obs0, legal0, pi0, z0 = z(B, 14, 7, 7), z(B, N_ACTIONS, t=bool), z(B, N_ACTIONS), z(B)
         act, win, valid, has_pi, nz = z(B, U, t=np.int64), z(B, U), z(B, U), z(B, U), z(B, U)
         nobs, nlegal, npi, boot = z(B, U, 14, 7, 7), z(B, U, N_ACTIONS, t=bool), z(B, U, N_ACTIONS), z(B, self.K)
+        cf_act, cf_win, cf_valid = z(B, t=np.int64), z(B), z(B)
         for b, i in enumerate(gi):
             G = self.games[i]
             T = len(G["act"])
-            t = int(self.rng.integers(T))
+            # Oversample terminal/tactical states slightly so the win/value heads see rich tactics
+            t = T - 1 if (T > 1 and self.rng.random() < 0.2) else int(self.rng.integers(T))
             obs0[b], legal0[b], pi0[b], z0[b], boot[b] = G["obs"][t], G["legal"][t], G["pi"][t], G["z"][t], G["boot"][t]
+            if "wmask" in G:
+                wm = G["wmask"][t]
+                non_win = np.flatnonzero(G["legal"][t] & ~wm)
+                win_acts = np.flatnonzero(wm)
+                if G["win"][t] > 0.5 and len(non_win) > 0:
+                    # Contrastive counterfactual on the SAME board: played move won (1), this legal move does not (0)
+                    cf_act[b] = int(non_win[self.rng.integers(len(non_win))])
+                    cf_win[b], cf_valid[b] = 0.0, 1.0
+                elif G["win"][t] < 0.5 and len(win_acts) > 0:
+                    cf_act[b] = int(win_acts[self.rng.integers(len(win_acts))])
+                    cf_win[b], cf_valid[b] = 1.0, 1.0
+                elif len(non_win) > 0:
+                    cf_act[b] = int(non_win[self.rng.integers(len(non_win))])
+                    cf_win[b], cf_valid[b] = 0.0, 1.0
             for u in range(U):
                 j = t + u
                 if j >= T:
@@ -148,7 +206,8 @@ class Replay:
                 if j + 1 < T:
                     npi[b, u], has_pi[b, u] = G["pi"][j + 1], 1.0
         to = lambda x: torch.as_tensor(x, device=device)
-        return [to(x) for x in (obs0, legal0, pi0, z0, act, win, nobs, nlegal, npi, has_pi, nz, valid, boot)]
+        return [to(x) for x in (obs0, legal0, pi0, z0, act, win, nobs, nlegal, npi, has_pi, nz, valid, boot,
+                                cf_act, cf_win, cf_valid)]
 
 
 def masked_ce(logits, target, legal):
@@ -158,7 +217,7 @@ def masked_ce(logits, target, legal):
 
 def train_step(net, opt, batch, cfg):
     net.train()
-    obs0, legal0, pi0, z0, act, win, nobs, nlegal, npi, has_pi, nz, valid, boot = batch
+    obs0, legal0, pi0, z0, act, win, nobs, nlegal, npi, has_pi, nz, valid, boot, cf_act, cf_win, cf_valid = batch
     B, U = act.shape
     s0 = net.h(obs0)
     pol0, v0, leg0 = net.f(s0)
@@ -169,24 +228,45 @@ def train_step(net, opt, batch, cfg):
         target = net.h(nobs.flatten(0, 1)).view(B, U, *s0.shape[1:])
     dyn = {"win": 0.0, "consistency": 0.0}
     K = net.n_ricks
-    for k, rick in enumerate(net.ricks):
-        s = s0
-        for u in range(U):
-            m = valid[:, u] * boot[:, k]
+    s_list = [s0 for _ in range(K)]
+    for u in range(U):
+        m_u = valid[:, u:u + 1] * boot                     # (B, K)
+        if m_u.sum() == 0:
+            break
+        next_s, wl_list = [], []
+        for k, rick in enumerate(net.ricks):
+            s_in = 0.5 * s_list[k] + 0.5 * s_list[k].detach()
+            sk, wlk = rick(s_in, act[:, u])
+            next_s.append(sk)
+            wl_list.append(wlk)
+        s_list = next_s
+        S = torch.stack(s_list)                            # (K, B, C, 7, 7)
+        WL = torch.stack(wl_list)                          # (K, B)
+        pol, v, leg = net.f(S.flatten(0, 1))
+        pol, v, leg = pol.view(K, B, -1), v.view(K, B), leg.view(K, B, -1)
+        for k in range(K):
+            m = m_u[:, k]
             if m.sum() == 0:
-                break
-            s = 0.5 * s + 0.5 * s.detach()                    # MuZero: halve gradients into dynamics
-            s, wl = rick(s, act[:, u])
-            pol, v, leg = net.f(s)
-            l_win = F.binary_cross_entropy_with_logits(wl, win[:, u], reduction="none")
-            l_cons = net.consistency(s, target[:, u])
-            per = (cfg["w_win"] * l_win + cfg["w_cons"] * l_cons + cfg["w_value"] * (v - nz[:, u]) ** 2
-                   + cfg["w_legal"] * F.binary_cross_entropy_with_logits(leg, nlegal[:, u].float(), reduction="none").mean(-1)
-                   + cfg["w_policy"] * masked_ce(pol, npi[:, u], nlegal[:, u]) * has_pi[:, u])
+                continue
+            l_win = F.binary_cross_entropy_with_logits(WL[k], win[:, u], reduction="none")
+            l_cons = net.consistency(S[k], target[:, u])
+            per = (cfg["w_win"] * l_win + cfg["w_cons"] * l_cons + cfg["w_value"] * (v[k] - nz[:, u]) ** 2
+                   + cfg["w_legal"] * F.binary_cross_entropy_with_logits(leg[k], nlegal[:, u].float(), reduction="none").mean(-1)
+                   + cfg["w_policy"] * masked_ce(pol[k], npi[:, u], nlegal[:, u]) * has_pi[:, u])
             denom = m.sum().clamp(min=1.0)
             loss = loss + (per * m).sum() / denom / K
             dyn["win"] += ((l_win * m).sum() / denom).item() / K
             dyn["consistency"] += ((l_cons * m).sum() / denom).item() / K
+    if cf_valid.sum() > 0:
+        # Contrastive counterfactual action probe on s0: forces Rick to depend on action `a`, not just state `s0`
+        s_cf = 0.5 * s0 + 0.5 * s0.detach()
+        for k, rick in enumerate(net.ricks):
+            m = cf_valid * boot[:, k]
+            if m.sum() == 0:
+                continue
+            _, wl_cf = rick(s_cf, cf_act)
+            l_cf = F.binary_cross_entropy_with_logits(wl_cf, cf_win, reduction="none")
+            loss = loss + cfg["w_win"] * (l_cf * m).sum() / m.sum().clamp(min=1.0) / K
     opt.zero_grad()
     loss.backward()
     torch.nn.utils.clip_grad_norm_(net.parameters(), 5.0)
@@ -238,20 +318,26 @@ def selfplay_stage(cfg, out_dir, resume=False):
         rng = np.random.default_rng([cfg["seed"], 1, start])
         replay.rng = rng
         print(f"resuming after iteration {ck['iteration']}", flush=True)
-    for it in range(start, cfg["iterations"] + 1):
-        t0 = time.time()
-        net.eval()
-        for game in generate_games(net, pool, cfg, rng, device):
-            replay.add(game)
-        t_play = time.time() - t0
-        logs = [train_step(net, opt, replay.sample(cfg["batch"], cfg["unroll"], device), cfg) for _ in range(cfg["train_steps"])]
-        net.eval()
-        mean = {k: round(float(np.mean([l[k] for l in logs])), 4) for k in logs[0]}
-        check = quick_check(net, pool, rng, device)
-        history.append({"iteration": it, "positions": replay.size, "play_s": round(t_play), "train_s": round(time.time() - t0 - t_play),
-                        **mean, "vs_random": check["random"], "vs_greedy": check["greedy"]})
-        print(json.dumps(history[-1]), flush=True)   # flush: progress shows up in redirected logs
-        save_ckpt(path, net, cfg, pool, it, history, opt)
+    worker_pool = mp.get_context("spawn").Pool(cfg["workers"]) if cfg["workers"] > 1 else None
+    try:
+        for it in range(start, cfg["iterations"] + 1):
+            t0 = time.time()
+            net.eval()
+            for game in generate_games(net, pool, cfg, rng, device, worker_pool):
+                replay.add(game)
+            t_play = time.time() - t0
+            logs = [train_step(net, opt, replay.sample(cfg["batch"], cfg["unroll"], device), cfg) for _ in range(cfg["train_steps"])]
+            net.eval()
+            mean = {k: round(float(np.mean([l[k] for l in logs])), 4) for k in logs[0]}
+            check = quick_check(net, pool, rng, device)
+            history.append({"iteration": it, "positions": replay.size, "play_s": round(t_play), "train_s": round(time.time() - t0 - t_play),
+                            **mean, "vs_random": check["random"], "vs_greedy": check["greedy"]})
+            print(json.dumps(history[-1]), flush=True)   # flush: progress shows up in redirected logs
+            save_ckpt(path, net, cfg, pool, it, history, opt)
+    finally:
+        if worker_pool is not None:
+            worker_pool.close()
+            worker_pool.join()
     return net
 
 
@@ -301,7 +387,7 @@ def gate_stage(cfg, out_dir):
         Y.append(y)
     X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.float32)
     print(f"{len(Y)} labelled train positions in {time.time() - t0:.0f}s: search changed the move in "
-          f"{np.mean(Y != 0):.0%}, mean reference-search gain {Y.mean():+.3f}, helped {np.mean(Y > 0):.0%}, hurt {np.mean(Y < 0):.0%}")
+          f"{np.mean(Y != 0):.0%}, mean reference-search gain {Y.mean():+.3f}, helped {np.mean(Y > 0):.0%}, hurt {np.mean(Y < 0):.0%}", flush=True)
 
     voc = VOCModel()
     voc.mu.copy_(torch.as_tensor(X.mean(0)))
@@ -338,14 +424,64 @@ def gate_stage(cfg, out_dir):
     print("thresholds (plan when score >= threshold):", json.dumps(thresholds))
 
 
+def meeseeks_stage(cfg, out_dir):
+    """Train Mr. Meeseeks anytime halting models (for both latent and sim search) on self-supervised
+    stopping-regret and move-agreement traces, then calibrate halting rules on val traces."""
+    device = cfg["device"]
+    net, ck = load_ckpt(os.path.join(out_dir, "citadel.pt"), device)
+    rng = np.random.default_rng([cfg["seed"], 3])
+    train_pool = [universe_from_seed(s) for s in ck["train_seeds"]]
+    val_pool = universes("val", cfg["val_universes"])
+    n_tr = cfg["meeseeks_positions"] or min(cfg["gate_positions"], 400)
+    n_val = cfg["meeseeks_val_positions"] or min(cfg["calib_positions"], 240)
+    max_sims = cfg["gate_sims"]
+    check_every = cfg["check_every"]
+    beta = cfg["beta"]
+
+    train_pos = positions(net, train_pool, n_tr, rng, device, opening_offset=3_000_000)
+    val_pos = positions(net, val_pool, n_val, rng, device, opening_offset=1_500_000)
+
+    bundle = {
+        "features": LIVE_FEATURES,
+        "max_sims": max_sims,
+        "check_every": check_every,
+        "beta": beta,
+        "val_seeds": [u.seed for u in val_pool],
+        "modes": {},
+    }
+    for kind in ("latent", "sim"):
+        t0 = time.time()
+        tr_traces = [run_trace(net, kind, g, max_sims, check_every, beta, rng, device) for g in train_pos]
+        X = np.concatenate([tr["feats"] for tr in tr_traces], axis=0)
+        R = np.concatenate([tr["regret"] for tr in tr_traces], axis=0)
+        A = np.concatenate([tr["agree"] for tr in tr_traces], axis=0)
+        G = np.concatenate([np.full(len(tr["sims"]), i) for i, tr in enumerate(tr_traces)])
+        model, stats = fit_halt_model(X, R, A, G, rng, steps=cfg["meeseeks_steps"])
+        val_traces = [run_trace(net, kind, g, max_sims, check_every, beta, rng, device) for g in val_pos]
+        cal = calibrate_all_rules(val_traces, model, max_sims, cfg["budgets"])
+        print(f"Meeseeks [{kind}] ({time.time() - t0:.0f}s): regret corr all={stats['heldout_regret_corr']:.3f} "
+              f"(t0={stats['heldout_regret_corr_t0']:.3f} -> live={stats['heldout_regret_corr_live']:.3f}), "
+              f"agree acc={stats['heldout_agree_acc']:.3f} (base {stats['heldout_agree_base']:.3f})", flush=True)
+        bundle["modes"][kind] = {
+            "model": model.state_dict(),
+            "stats": stats,
+            **cal,
+        }
+    torch.save(bundle, os.path.join(out_dir, "meeseeks.pt"))
+    return bundle
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=None)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--stage", default="all", choices=["selfplay", "gate", "all"])
+    ap.add_argument("--stage", default="all", choices=["selfplay", "gate", "meeseeks", "all"])
+    ap.add_argument("--seed", type=int, default=None, help="override config seed")
     ap.add_argument("--resume", action="store_true", help="continue an interrupted self-play run")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)
+    if args.seed is not None:
+        cfg["seed"] = args.seed
     torch.set_num_threads(cfg["threads"])
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "config.json"), "w") as f:
@@ -354,6 +490,8 @@ def main(argv=None):
         selfplay_stage(cfg, args.out, resume=args.resume)
     if args.stage in ("gate", "all"):
         gate_stage(cfg, args.out)
+    if args.stage in ("meeseeks", "all"):
+        meeseeks_stage(cfg, args.out)
 
 
 if __name__ == "__main__":

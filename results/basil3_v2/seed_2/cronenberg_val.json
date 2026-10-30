@@ -1,0 +1,203 @@
+{
+ "split": "val",
+ "n_universes": 12,
+ "episodes": 6,
+ "opponent": "greedy",
+ "sims": 48,
+ "budget": "0.25",
+ "train_seed": 2,
+ "posterior_curve": {
+  "entropy_bits_start": [
+   6.4919,
+   3.9316,
+   2.7798,
+   2.3743,
+   2.1302,
+   1.9981
+  ],
+  "entropy_bits_end": [
+   3.9316,
+   2.7798,
+   2.3743,
+   2.1302,
+   1.9981,
+   1.6462
+  ],
+  "alive_start": [
+   90.0,
+   17.92,
+   9.42,
+   7.75,
+   6.17,
+   5.5
+  ],
+  "alive_end": [
+   17.92,
+   9.42,
+   7.75,
+   6.17,
+   5.5,
+   4.08
+  ],
+  "rule_brier_start": [
+   0.2292,
+   0.1453,
+   0.0942,
+   0.0811,
+   0.0744,
+   0.0686
+  ]
+ },
+ "modes": {
+  "blind_morty": {
+   "score_by_episode": [
+    0.5,
+    0.5,
+    0.9167,
+    0.3333,
+    0.5833,
+    0.6667
+   ],
+   "expansions_by_episode": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "plan_rate_by_episode": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_score": 0.5833,
+   "early_score_ep1_2": 0.5,
+   "late_score_ep5_6": 0.625,
+   "mean_expansions": 0.0
+  },
+  "cfc_morty": {
+   "score_by_episode": [
+    0.75,
+    0.5,
+    0.75,
+    0.4167,
+    0.4167,
+    0.5
+   ],
+   "expansions_by_episode": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "plan_rate_by_episode": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_score": 0.5556,
+   "early_score_ep1_2": 0.625,
+   "late_score_ep5_6": 0.4584,
+   "mean_expansions": 0.0
+  },
+  "cfc_meeseeks": {
+   "score_by_episode": [
+    0.6667,
+    0.625,
+    0.5833,
+    0.5833,
+    0.5833,
+    0.5833
+   ],
+   "expansions_by_episode": [
+    22.33,
+    24.2,
+    22.19,
+    16.61,
+    17.85,
+    20.11
+   ],
+   "plan_rate_by_episode": [
+    0.601,
+    0.662,
+    0.644,
+    0.646,
+    0.614,
+    0.729
+   ],
+   "mean_score": 0.6041,
+   "early_score_ep1_2": 0.6459,
+   "late_score_ep5_6": 0.5833,
+   "mean_expansions": 20.55
+  },
+  "cfc_citadel": {
+   "score_by_episode": [
+    0.75,
+    0.625,
+    0.75,
+    0.5,
+    0.7917,
+    0.7917
+   ],
+   "expansions_by_episode": [
+    39.75,
+    38.85,
+    37.69,
+    37.41,
+    36.12,
+    37.84
+   ],
+   "plan_rate_by_episode": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "mean_score": 0.7014,
+   "early_score_ep1_2": 0.6875,
+   "late_score_ep5_6": 0.7917,
+   "mean_expansions": 37.94
+  },
+  "full_info_citadel": {
+   "score_by_episode": [
+    1.0,
+    0.8333,
+    0.9583,
+    0.8333,
+    1.0,
+    0.9167
+   ],
+   "expansions_by_episode": [
+    28.97,
+    33.2,
+    31.54,
+    33.37,
+    30.95,
+    32.01
+   ],
+   "plan_rate_by_episode": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "mean_score": 0.9236,
+   "early_score_ep1_2": 0.9166,
+   "late_score_ep5_6": 0.9584,
+   "mean_expansions": 31.67
+  }
+ }
+}
