@@ -80,14 +80,14 @@ Why did the baseline architecture and pre-search VOC gate fail on held-out rule 
 \label{sec:citadel}
 Our world model consists of a representation network $s_0 = h_\theta(o_0)$, a fast prediction head $(\mathbf{p}, v, \boldsymbol{\ell}) = f_\theta(s)$ (`FastPolicy'), and an ensemble of $K$ bootstrapped dynamics networks $(s'_{k}, w_k) = g_{\theta_k}(s, a)$ with fixed randomized priors \citep{osband2018randomized} (`DynamicsEnsemble'). We introduce four structural invariants:
 
-\paragraph{1. Pinned Rule Invariants.}
+\paragraph{1. Pinned Rule Invariants}
 Planes $3$--$12$ of $o_0$, denoted $d = o_0[3{:}13] \in [0, 1]^{10 \times 7 \times 7}$, represent time-invariant constants of the universe (blocked cells, active board mask $M_{\text{on}} = o_0[4{:}5]$, gravity, boundary wraps, and winning shapes). Both $h_\theta$ and every $g_{\theta_k}$ pin $d$ into the final $10$ channels of the latent state:
 \begin{equation}
     s = \big[\,\mathrm{Scale}(z_{\text{dyn}}, M_{\text{on}}) \;\|\; d\,\big] \in \mathbb{R}^{C \times 7 \times 7},
 \end{equation}
 guaranteeing zero rule drift at arbitrary search depth. To prevent trivial satisfaction of the self-supervised representation alignment loss \citep{ye2021mastering}, latent consistency $\mathcal{L}_{\text{cons}}(s_{\text{pred}}, \mathrm{sg}(s_{\text{targ}}))$ is evaluated strictly on the $C - 10$ learned dynamic channels.
 
-\paragraph{2. Variable-Boundary Toroidal Wrap Convolutions.}
+\paragraph{2. Variable-Boundary Toroidal Wrap Convolutions}
 Standard circular padding on a $7 \times 7$ tensor wraps column $0$ to column $6$, which is off-board padding whenever $W \in \{5, 6\}$. Using the active board mask $M_{\text{on}}$, we extract the exact right/left and bottom/top boundary masks for any board size $(H, W) \in \{5, 6, 7\}^2$ via first differences:
 \begin{equation}
     E_{\text{right}} = (M_{\text{on}} - \mathrm{PadRight}(M_{\text{on}}))_+, \qquad
@@ -95,10 +95,10 @@ Standard circular padding on a $7 \times 7$ tensor wraps column $0$ to column $6
 \end{equation}
 and inject the learnable boundary impulse $\Delta_{\text{wrap}}(x, d) = w_h\big(E_{\text{left}}\sum_c (x \odot E_{\text{right}}) + E_{\text{right}} x_{:,:,:,0:1}\big) + w_v\big(E_{\text{top}}\sum_r (x \odot E_{\text{bot}}) + E_{\text{bot}} x_{:,:,0:1,:}\big)$ directly into every residual block alongside masked global max-plus-mean Squeeze-and-Excitation.
 
-\paragraph{3. Translation-Equivariant Heads and Contrastive Counterfactual Probes.}
+\paragraph{3. Translation-Equivariant Heads and Contrastive Counterfactual Probes}
 In $f_\theta(s)$, move logits are produced per cell by a $1\times 1$ convolution over local $3\times 3$ features modulated by global max/mean board context, while legality logits explicitly mask off-board and blocked cells from $d$. In each dynamics model $g_{\theta_k}(s, a)$ with one-hot action plane $A_a \in \{0,1\}^{1\times 7\times 7}$, the win head extracts the feature vector \emph{at the played coordinate} $z_a = \sum_{r,c} \phi(h) \odot A_a$ concatenated with global max and mean board pools $\big[\max_{M_{\text{on}}} \phi(h),\, \mathrm{mean}_{M_{\text{on}}} \phi(h)\big]$. During training, whenever a state $s_0$ has a winning move ($w_0 = 1$), we also query $g_{\theta_k}(s_0, a_{\text{cf}})$ on a counterfactual legal non-winning move $a_{\text{cf}}$ ($w_{\text{cf}} = 0$) on the \emph{exact same board} $s_0$, forcing $g_{\theta_k}$ to discriminate based on $a$ rather than state-level correlations.
 
-\paragraph{4. Holographic Board-State Carrier, Manifold-Coupled Imagination, and Adjoint Dihedral-Torus Tactical Horizon.}
+\paragraph{4. Holographic Board-State Carrier, Manifold-Coupled Imagination, and Adjoint Dihedral-Torus Tactical Horizon}
 In standard latent world models, passing the dynamic board occupancy $b_t = (b_{\text{my}}, b_{\text{opp}}, b_{\text{empty}}) \in [0,1]^{3\times 7\times 7}$ through residual blocks and group normalization blurs exact stone coordinates across multi-step rollouts. To preserve both dense neural representations and lossless discrete occupancy without adding channels, we quantize the first three dynamic channels $z_{:,:3} \in [0,1)$ to $2^{-8}$ bins and pack $b_t$ into the $2^{-9}$ binary mantissa:
 \begin{equation}
     \mathrm{Pack}(z_{:,:3}, b_t) = \left(\frac{\lfloor 256\, z_{:,:3} \rfloor}{256} + \frac{b_t}{512}\right) \odot M_{\text{on}}, \qquad
