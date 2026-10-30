@@ -19,12 +19,11 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 
-\title{\textbf{Know When to Imagine, Know Which World You Are In:\\
-Adaptive Test-Time Compute and In-Context Rule Induction for Latent World-Model Planning}}
+\title{\textbf{BASIL: Bayesian Adaptive State Imagination and Learning\\
+with Live Telemetry Halting and In-Context Rule Induction}}
 
 \author{
-  Saptarshi Halder \\
-  \texttt{https://github.com/saptarshihalder/BASIL-2-beta}
+  Saurabh Shinde
 }
 \date{October 2026}
 
@@ -32,7 +31,7 @@ Adaptive Test-Time Compute and In-Context Rule Induction for Latent World-Model 
 \maketitle
 
 \begin{abstract}
-An intelligent agent deployed in an unfamiliar environment faces three coupled questions at every decision: \emph{what are the governing rules of this environment}, \emph{is deliberation worth the compute right now}, and \emph{when has sufficient planning been performed}? Prior work on adaptive imagination typically trains a pre-search value-of-computation (VOC) gate on the difference between two noisy reference searches. On procedurally generated games with unseen rule families (\textsc{Multiverse}), we show that this pre-search VOC paradigm fails on standard latent world models: its labels are zero on $73\%$ of states and dominated by estimation variance on the rest, yielding a held-out correlation of $r = -0.004$ with actual planning gain. We trace this failure to three root causes---non-equivariant dynamics and policy heads that fail to transfer across board topologies, latent board-occupancy drift across multi-step rollouts, and pre-search epistemic blindness---and introduce \textbf{BASIL-3}, an architecture that resolves all three:
+An intelligent agent deployed in an unfamiliar environment faces three coupled questions at every decision: \emph{what are the governing rules of this environment}, \emph{is deliberation worth the compute right now}, and \emph{when has sufficient planning been performed}? Prior work on adaptive imagination typically trains a pre-search value-of-computation (VOC) gate on the difference between two noisy reference searches. On procedurally generated games with unseen rule families (\textsc{Multiverse}), we show that this pre-search VOC paradigm fails on standard latent world models: its labels are zero on $73\%$ of states and dominated by estimation variance on the rest, yielding a held-out correlation of $r = -0.004$ with actual planning gain. We trace this failure to three root causes---non-equivariant dynamics and policy heads that fail to transfer across board topologies, latent board-occupancy drift across multi-step rollouts, and pre-search epistemic blindness---and introduce \textbf{BASIL} (\emph{Bayesian Adaptive State Imagination and Learning}), an architecture that resolves all three:
 (1) \textbf{Toroidal-Equivariant \& Holographic Manifold World Models (HMWM)} with pinned rule invariants, lossless $2^{-9}$-mantissa holographic board-state carriers, manifold-coupled imagination, and an adjoint dihedral-torus tactical horizon;
 (2) \textbf{Live Telemetry Halting (LTH)}, a self-supervised anytime optimal-stopping policy that monitors live tree-search telemetry (visit concentration, $Q$-gaps, value drift, and ensemble disagreement) and predicts stopping regret from a single search trace without external reference noise; and
 (3) \textbf{Exact Bayesian Hypothesis Filtration (BHF)} in hidden-rule regimes, where governing mechanics are unobserved and the agent maintains an exact Bayesian posterior over candidate rule universes across episodes while running posterior-sampled world-model tree search.
