@@ -1,9 +1,7 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
+\documentclass[preprint,3p,times]{elsarticle}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{natbib}
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{hyperref}
@@ -15,20 +13,19 @@
     urlcolor=blue!60!black
 }
 
+\journal{Artificial Intelligence}
+
 \newtheorem{proposition}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 
-\title{\textbf{BASIL: Bayesian Adaptive State Imagination and Learning\\
-with Live Telemetry Halting and In-Context Rule Induction}}
-
-\author{
-  Saurabh Shinde
-}
-\date{October 2026}
-
 \begin{document}
-\maketitle
+
+\begin{frontmatter}
+
+\title{BASIL: Bayesian Adaptive State Imagination and Learning with Live Telemetry Halting and In-Context Rule Induction}
+
+\author{Saurabh Shinde}
 
 \begin{abstract}
 An intelligent agent deployed in an unfamiliar environment faces three coupled questions at every decision: \emph{what are the governing rules of this environment}, \emph{is deliberation worth the compute right now}, and \emph{when has sufficient planning been performed}? Prior work on adaptive imagination typically trains a pre-search value-of-computation (VOC) gate on the difference between two noisy reference searches. On procedurally generated games with unseen rule families (\textsc{Multiverse}), we show that this pre-search VOC paradigm fails on standard latent world models: its labels are zero on $73\%$ of states and dominated by estimation variance on the rest, yielding a held-out correlation of $r = -0.004$ with actual planning gain. We trace this failure to three root causes---non-equivariant dynamics and policy heads that fail to transfer across board topologies, latent board-occupancy drift across multi-step rollouts, and pre-search epistemic blindness---and introduce \textbf{BASIL} (\emph{Bayesian Adaptive State Imagination and Learning}), an architecture that resolves all three:
@@ -37,6 +34,12 @@ An intelligent agent deployed in an unfamiliar environment faces three coupled q
 (3) \textbf{Exact Bayesian Hypothesis Filtration (BHF)} in hidden-rule regimes, where governing mechanics are unobserved and the agent maintains an exact Bayesian posterior over candidate rule universes across episodes while running posterior-sampled world-model tree search.
 Across a leak-checked 3-seed study on unseen rule families, BASIL-3 increases zero-search fast-policy performance by $6.6\times$ ($0.083 \to 0.549$ vs.\ \texttt{greedy}), while full latent imagination reaches \textbf{$0.958$} ($+0.410$ over \texttt{FastPolicy}) vs.\ \texttt{greedy} and \textbf{$0.771$} ($+0.347$ over \texttt{FastPolicy}) vs.\ $100$-rollout true-simulator MCTS (\texttt{uct-100}) using only $48$ imagined simulations and zero simulator access. Live Telemetry Halting raises stopping-regret correlation from $r = -0.004$ to $r = +0.564$ while retaining $+0.222$ of the planning gain against \texttt{uct-100} at only $24\%$ of the expansions ($8.2$ vs.\ $33.9$ expansions/move), and Bayesian Hypothesis Filtration collapses rule posterior entropy from $6.49$ bits ($90.0$ candidate universes) to $1.69$ bits ($4.6$ candidates) over a 6-episode hidden-rule match, lifting Posterior-Sampled World-Model Search score to $0.757$ in Episodes 5--6.
 \end{abstract}
+
+\begin{keyword}
+Model-Based Reinforcement Learning \sep Adaptive Test-Time Compute \sep Monte Carlo Tree Search \sep Optimal Stopping \sep In-Context Rule Induction \sep Latent World Models
+\end{keyword}
+
+\end{frontmatter}
 
 \section{Introduction}
 Model-based planning algorithms such as AlphaZero \citep{silver2018general}, MuZero \citep{schrittwieser2020mastering}, and EfficientZero \citep{ye2021mastering} achieve strong performance by running a fixed budget of Monte Carlo Tree Search (MCTS) simulations at every turn. Yet allocating an identical compute budget to forced recaptures, symmetric openings, and sharp tactical forks violates basic principles of bounded rationality \citep{russell1991right,hay2012selecting}. In human cognition and resource-constrained deployment alike, an agent should act on fast intuition (`System 1') when additional search will not alter its chosen action, and invest imagination steps (`System 2') only while uncertainty on the principal variation remains unresolved \citep{anthony2017thinking,hamrick2017metacontrol}.
@@ -194,7 +197,7 @@ Table~\ref{tab:cronenberg} and Figure~\ref{fig:cronenberg} evaluate adaptation a
 We have shown that making adaptive test-time imagination work on unseen games requires aligning three layers of the agent: (1) an equivariant, holographic manifold-coupled world model (BASIL-3) that preserves discrete board occupancy and evaluates an exact adjoint dihedral-torus tactical horizon; (2) an anytime optimal-stopping policy (Live Telemetry Halting) trained on low-variance self-supervised search traces and conditioned on live tree telemetry rather than pre-search guesses; and (3) in-context Exact Bayesian Hypothesis Filtration (BHF) when the governing mechanics of the environment are hidden. All code, preregistration hashes, checkpoints, and evaluation scripts are openly available in the repository.
 
 \clearpage
-\bibliographystyle{plainnat}
+\bibliographystyle{elsarticle-harv}
 \bibliography{references}
 
 \end{document}
