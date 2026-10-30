@@ -1,0 +1,1454 @@
+{
+ "hash": "1961ace8167226db",
+ "train_seed": 1,
+ "args": {
+  "run": "results/basil3_v2/seed_1",
+  "split": "test",
+  "universes": 12,
+  "openings": 1,
+  "agents": "morty,citadel@always,citadel@meeseeks:0.1,citadel@meeseeks:0.25,citadel@meeseeks:0.5,citadel@meeseeks_agree:0.25,citadel@meeseeks_pre:0.25,citadel@share:0.25,citadel@unreach:0.25,citadel@voc:0.25,citadel@disagreement:0.25,citadel@confidence:0.25,citadel@random:0.25,oracle,oracle@meeseeks:0.1,oracle@meeseeks:0.25,oracle@meeseeks:0.5",
+  "opponents": "greedy,uct-100",
+  "reference": "morty",
+  "sims": 48,
+  "beta": 0.25,
+  "device": "cpu",
+  "preregister": false,
+  "out": "results/basil3_v2/seed_1/eval_test.json"
+ },
+ "universes": [
+  "universe 6: 5x6, free placement, portals top-bottom, 2 blocked, wins: I,O",
+  "universe 7: 7x6, free placement, portals top-bottom, 2 blocked, wins: O",
+  "universe 9: 7x6, gravity, 0 blocked, wins: O,T",
+  "universe 10: 6x5, free placement, portals top-bottom, 2 blocked, wins: T,L",
+  "universe 12: 7x7, gravity, 1 blocked, wins: I",
+  "universe 14: 6x7, gravity, 0 blocked, wins: T",
+  "universe 26: 7x6, free placement, 0 blocked, wins: O,L",
+  "universe 27: 5x7, free placement, portals top-bottom, 3 blocked, wins: S,L",
+  "universe 29: 6x5, gravity, portals left-right, 0 blocked, wins: T",
+  "universe 31: 5x5, free placement, portals top-bottom, 0 blocked, wins: T,L",
+  "universe 44: 6x7, free placement, portals top-bottom, 1 blocked, wins: O,S",
+  "universe 45: 6x7, gravity, 0 blocked, wins: T"
+ ],
+ "per_universe": [
+  {
+   "agent": "morty",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.5,
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "agent": "morty",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.5,
+    1.0,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@always",
+   "opponent": "greedy",
+   "scores": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@always",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    0.25,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.1",
+   "opponent": "greedy",
+   "scores": [
+    0.5,
+    0.5,
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.1",
+   "opponent": "uct-100",
+   "scores": [
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.75,
+    0.75,
+    0.5,
+    1.0,
+    0.25,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.5,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.5",
+   "opponent": "greedy",
+   "scores": [
+    1.0,
+    0.75,
+    0.5,
+    1.0,
+    0.5,
+    0.5,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.5",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.5,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_agree:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.75,
+    0.5,
+    1.0,
+    0.75,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_agree:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    0.25,
+    0.5,
+    1.0,
+    1.0,
+    0.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_pre:0.25",
+   "opponent": "greedy",
+   "scores": [
+    1.0,
+    0.5,
+    0.5,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_pre:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    0.5,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@share:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.5,
+    0.75,
+    1.0,
+    1.0,
+    0.75,
+    0.75,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@share:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@unreach:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.5,
+    0.5,
+    1.0,
+    0.5,
+    0.75,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@unreach:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.0,
+    1.0,
+    0.25,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@voc:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.75,
+    1.0,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@voc:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    0.0,
+    1.0,
+    1.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@disagreement:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.5,
+    0.5,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    1.0,
+    0.0,
+    1.0
+   ]
+  },
+  {
+   "agent": "citadel@disagreement:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    0.0,
+    1.0,
+    0.5,
+    0.5,
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    0.0,
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@confidence:0.25",
+   "opponent": "greedy",
+   "scores": [
+    1.0,
+    0.5,
+    0.5,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@confidence:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@random:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.5,
+    0.5,
+    1.0,
+    0.0,
+    0.5,
+    0.5,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "agent": "citadel@random:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.5,
+    0.0,
+    0.0,
+    0.5,
+    1.0,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle",
+   "opponent": "greedy",
+   "scores": [
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.5,
+    0.5,
+    0.25,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.1",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    0.5,
+    0.5,
+    1.0,
+    0.0,
+    1.0,
+    1.0,
+    0.5,
+    0.5,
+    1.0,
+    0.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.1",
+   "opponent": "uct-100",
+   "scores": [
+    0.0,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+    1.0,
+    1.0,
+    0.0,
+    0.5,
+    0.0,
+    0.5
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.25",
+   "opponent": "greedy",
+   "scores": [
+    0.0,
+    1.0,
+    0.5,
+    1.0,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.25",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.5",
+   "opponent": "greedy",
+   "scores": [
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    0.5,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.5",
+   "opponent": "uct-100",
+   "scores": [
+    1.0,
+    1.0,
+    0.5,
+    1.0,
+    0.0,
+    0.5,
+    1.0,
+    0.5,
+    0.5,
+    1.0,
+    0.5,
+    1.0
+   ]
+  }
+ ],
+ "results": [
+  {
+   "agent": "morty",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.5833,
+   "score_ci95": [
+    0.375,
+    0.7917
+   ],
+   "wins": 14,
+   "draws": 0,
+   "losses": 10,
+   "plan_rate": 0.0,
+   "expansions_per_move": 0.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 0.0,
+   "ms_per_move": 1.16,
+   "illegal_moves": 0
+  },
+  {
+   "agent": "citadel@always",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.9583,
+   "score_ci95": [
+    0.875,
+    1.0
+   ],
+   "wins": 23,
+   "draws": 0,
+   "losses": 1,
+   "plan_rate": 1.0,
+   "expansions_per_move": 34.5,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 138.11,
+   "ms_per_move": 217.91,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.375,
+   "delta_ci95": [
+    0.1667,
+    0.5833
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.1",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.625,
+   "score_ci95": [
+    0.4167,
+    0.8333
+   ],
+   "wins": 15,
+   "draws": 0,
+   "losses": 9,
+   "plan_rate": 0.255,
+   "expansions_per_move": 3.1,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 12.23,
+   "ms_per_move": 20.29,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0417,
+   "delta_ci95": [
+    -0.0833,
+    0.2083
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.7708,
+   "score_ci95": [
+    0.625,
+    0.9167
+   ],
+   "wins": 17,
+   "draws": 3,
+   "losses": 4,
+   "plan_rate": 0.679,
+   "expansions_per_move": 9.4,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 37.58,
+   "ms_per_move": 60.3,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1875,
+   "delta_ci95": [
+    0.0625,
+    0.3333
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.5",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.7708,
+   "score_ci95": [
+    0.625,
+    0.8958
+   ],
+   "wins": 17,
+   "draws": 3,
+   "losses": 4,
+   "plan_rate": 0.772,
+   "expansions_per_move": 16.2,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 64.74,
+   "ms_per_move": 102.74,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1875,
+   "delta_ci95": [
+    0.0,
+    0.4167
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_agree:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.75,
+   "score_ci95": [
+    0.5625,
+    0.9167
+   ],
+   "wins": 17,
+   "draws": 2,
+   "losses": 5,
+   "plan_rate": 0.748,
+   "expansions_per_move": 12.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 48.0,
+   "ms_per_move": 76.94,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1667,
+   "delta_ci95": [
+    0.0417,
+    0.3125
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_pre:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.625,
+   "score_ci95": [
+    0.4167,
+    0.8333
+   ],
+   "wins": 15,
+   "draws": 0,
+   "losses": 9,
+   "plan_rate": 0.197,
+   "expansions_per_move": 6.8,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 27.33,
+   "ms_per_move": 44.44,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0417,
+   "delta_ci95": [
+    -0.1667,
+    0.2917
+   ]
+  },
+  {
+   "agent": "citadel@share:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.8542,
+   "score_ci95": [
+    0.75,
+    0.9583
+   ],
+   "wins": 19,
+   "draws": 3,
+   "losses": 2,
+   "plan_rate": 1.0,
+   "expansions_per_move": 9.2,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 36.83,
+   "ms_per_move": 58.41,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.2708,
+   "delta_ci95": [
+    0.1042,
+    0.4375
+   ]
+  },
+  {
+   "agent": "citadel@unreach:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.7292,
+   "score_ci95": [
+    0.5417,
+    0.8958
+   ],
+   "wins": 16,
+   "draws": 3,
+   "losses": 5,
+   "plan_rate": 1.0,
+   "expansions_per_move": 9.1,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 36.28,
+   "ms_per_move": 57.78,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1458,
+   "delta_ci95": [
+    0.0203,
+    0.2917
+   ]
+  },
+  {
+   "agent": "citadel@voc:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.8542,
+   "score_ci95": [
+    0.7292,
+    0.9583
+   ],
+   "wins": 20,
+   "draws": 1,
+   "losses": 3,
+   "plan_rate": 0.323,
+   "expansions_per_move": 12.4,
+   "probes_per_move": 11.68,
+   "imagination_calls_per_move": 61.32,
+   "ms_per_move": 88.49,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.2708,
+   "delta_ci95": [
+    0.0625,
+    0.4583
+   ]
+  },
+  {
+   "agent": "citadel@disagreement:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.3333,
+    0.75
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 0.128,
+   "expansions_per_move": 6.0,
+   "probes_per_move": 12.0,
+   "imagination_calls_per_move": 36.11,
+   "ms_per_move": 49.01,
+   "illegal_moves": 0,
+   "delta_vs_morty": -0.0417,
+   "delta_ci95": [
+    -0.1667,
+    0.0833
+   ]
+  },
+  {
+   "agent": "citadel@confidence:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.625,
+   "score_ci95": [
+    0.4583,
+    0.7917
+   ],
+   "wins": 15,
+   "draws": 0,
+   "losses": 9,
+   "plan_rate": 0.347,
+   "expansions_per_move": 15.3,
+   "probes_per_move": 12.0,
+   "imagination_calls_per_move": 73.06,
+   "ms_per_move": 105.75,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0417,
+   "delta_ci95": [
+    -0.125,
+    0.25
+   ]
+  },
+  {
+   "agent": "citadel@random:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.375,
+    0.7083
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 0.239,
+   "expansions_per_move": 9.0,
+   "probes_per_move": 12.0,
+   "imagination_calls_per_move": 48.17,
+   "ms_per_move": 67.56,
+   "illegal_moves": 0,
+   "delta_vs_morty": -0.0417,
+   "delta_ci95": [
+    -0.125,
+    0.0
+   ]
+  },
+  {
+   "agent": "oracle",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.9167,
+   "score_ci95": [
+    0.7917,
+    1.0
+   ],
+   "wins": 22,
+   "draws": 0,
+   "losses": 2,
+   "plan_rate": 1.0,
+   "expansions_per_move": 33.1,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 0.0,
+   "ms_per_move": 59.23,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.3333,
+   "delta_ci95": [
+    0.1667,
+    0.5
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.1",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.3333,
+    0.75
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 0.422,
+   "expansions_per_move": 3.8,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 3.81,
+   "ms_per_move": 8.59,
+   "illegal_moves": 0,
+   "delta_vs_morty": -0.0417,
+   "delta_ci95": [
+    -0.1667,
+    0.0833
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.25",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.7917,
+   "score_ci95": [
+    0.5833,
+    0.9583
+   ],
+   "wins": 19,
+   "draws": 0,
+   "losses": 5,
+   "plan_rate": 0.764,
+   "expansions_per_move": 9.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 9.05,
+   "ms_per_move": 18.41,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.2083,
+   "delta_ci95": [
+    0.0833,
+    0.3333
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.5",
+   "opponent": "greedy",
+   "games": 24,
+   "score": 0.8333,
+   "score_ci95": [
+    0.7083,
+    0.9583
+   ],
+   "wins": 20,
+   "draws": 0,
+   "losses": 4,
+   "plan_rate": 0.87,
+   "expansions_per_move": 17.8,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 17.83,
+   "ms_per_move": 34.26,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.25,
+   "delta_ci95": [
+    0.0417,
+    0.4167
+   ]
+  },
+  {
+   "agent": "morty",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.4583,
+   "score_ci95": [
+    0.2083,
+    0.7083
+   ],
+   "wins": 11,
+   "draws": 0,
+   "losses": 13,
+   "plan_rate": 0.0,
+   "expansions_per_move": 0.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 0.0,
+   "ms_per_move": 1.38,
+   "illegal_moves": 0
+  },
+  {
+   "agent": "citadel@always",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.6875,
+   "score_ci95": [
+    0.5,
+    0.875
+   ],
+   "wins": 16,
+   "draws": 1,
+   "losses": 7,
+   "plan_rate": 1.0,
+   "expansions_per_move": 35.6,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 142.45,
+   "ms_per_move": 224.49,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.2292,
+   "delta_ci95": [
+    0.0,
+    0.4792
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.1",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.3333,
+    0.75
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 0.268,
+   "expansions_per_move": 2.5,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 9.98,
+   "ms_per_move": 16.96,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0833,
+   "delta_ci95": [
+    -0.125,
+    0.2927
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5833,
+   "score_ci95": [
+    0.4167,
+    0.7917
+   ],
+   "wins": 14,
+   "draws": 0,
+   "losses": 10,
+   "plan_rate": 0.642,
+   "expansions_per_move": 8.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 32.08,
+   "ms_per_move": 51.84,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.125,
+   "delta_ci95": [
+    -0.0417,
+    0.2917
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks:0.5",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.625,
+   "score_ci95": [
+    0.4167,
+    0.8333
+   ],
+   "wins": 15,
+   "draws": 0,
+   "losses": 9,
+   "plan_rate": 0.794,
+   "expansions_per_move": 15.5,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 61.91,
+   "ms_per_move": 99.22,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1667,
+   "delta_ci95": [
+    0.0,
+    0.3333
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_agree:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.6458,
+   "score_ci95": [
+    0.437,
+    0.8542
+   ],
+   "wins": 15,
+   "draws": 1,
+   "losses": 8,
+   "plan_rate": 0.751,
+   "expansions_per_move": 8.8,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 35.05,
+   "ms_per_move": 57.09,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1875,
+   "delta_ci95": [
+    -0.0208,
+    0.3958
+   ]
+  },
+  {
+   "agent": "citadel@meeseeks_pre:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5,
+   "score_ci95": [
+    0.3333,
+    0.7083
+   ],
+   "wins": 12,
+   "draws": 0,
+   "losses": 12,
+   "plan_rate": 0.167,
+   "expansions_per_move": 6.7,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 26.87,
+   "ms_per_move": 43.87,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0417,
+   "delta_ci95": [
+    -0.125,
+    0.2083
+   ]
+  },
+  {
+   "agent": "citadel@share:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.3333,
+    0.75
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 1.0,
+   "expansions_per_move": 9.4,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 37.4,
+   "ms_per_move": 60.35,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0833,
+   "delta_ci95": [
+    -0.125,
+    0.375
+   ]
+  },
+  {
+   "agent": "citadel@unreach:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.6458,
+   "score_ci95": [
+    0.4375,
+    0.8542
+   ],
+   "wins": 15,
+   "draws": 1,
+   "losses": 8,
+   "plan_rate": 1.0,
+   "expansions_per_move": 9.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 36.19,
+   "ms_per_move": 57.96,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1875,
+   "delta_ci95": [
+    -0.0208,
+    0.3958
+   ]
+  },
+  {
+   "agent": "citadel@voc:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5833,
+   "score_ci95": [
+    0.3333,
+    0.8333
+   ],
+   "wins": 14,
+   "draws": 0,
+   "losses": 10,
+   "plan_rate": 0.298,
+   "expansions_per_move": 11.5,
+   "probes_per_move": 11.67,
+   "imagination_calls_per_move": 57.81,
+   "ms_per_move": 83.42,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.125,
+   "delta_ci95": [
+    -0.0833,
+    0.3333
+   ]
+  },
+  {
+   "agent": "citadel@disagreement:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.4583,
+   "score_ci95": [
+    0.25,
+    0.6667
+   ],
+   "wins": 11,
+   "draws": 0,
+   "losses": 13,
+   "plan_rate": 0.192,
+   "expansions_per_move": 8.8,
+   "probes_per_move": 11.94,
+   "imagination_calls_per_move": 47.17,
+   "ms_per_move": 66.59,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0,
+   "delta_ci95": [
+    -0.25,
+    0.2083
+   ]
+  },
+  {
+   "agent": "citadel@confidence:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.3333,
+   "score_ci95": [
+    0.1667,
+    0.5
+   ],
+   "wins": 8,
+   "draws": 0,
+   "losses": 16,
+   "plan_rate": 0.333,
+   "expansions_per_move": 12.9,
+   "probes_per_move": 12.0,
+   "imagination_calls_per_move": 63.59,
+   "ms_per_move": 91.79,
+   "illegal_moves": 0,
+   "delta_vs_morty": -0.125,
+   "delta_ci95": [
+    -0.375,
+    0.0833
+   ]
+  },
+  {
+   "agent": "citadel@random:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.5417,
+   "score_ci95": [
+    0.2917,
+    0.7917
+   ],
+   "wins": 13,
+   "draws": 0,
+   "losses": 11,
+   "plan_rate": 0.221,
+   "expansions_per_move": 8.3,
+   "probes_per_move": 12.0,
+   "imagination_calls_per_move": 45.11,
+   "ms_per_move": 63.11,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.0833,
+   "delta_ci95": [
+    0.0,
+    0.2083
+   ]
+  },
+  {
+   "agent": "oracle",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.6458,
+   "score_ci95": [
+    0.4583,
+    0.8333
+   ],
+   "wins": 15,
+   "draws": 1,
+   "losses": 8,
+   "plan_rate": 1.0,
+   "expansions_per_move": 35.7,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 0.0,
+   "ms_per_move": 65.21,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1875,
+   "delta_ci95": [
+    -0.0208,
+    0.4167
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.1",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.4167,
+   "score_ci95": [
+    0.2083,
+    0.625
+   ],
+   "wins": 10,
+   "draws": 0,
+   "losses": 14,
+   "plan_rate": 0.315,
+   "expansions_per_move": 3.0,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 3.03,
+   "ms_per_move": 7.33,
+   "illegal_moves": 0,
+   "delta_vs_morty": -0.0417,
+   "delta_ci95": [
+    -0.25,
+    0.125
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.25",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.625,
+   "score_ci95": [
+    0.375,
+    0.8333
+   ],
+   "wins": 15,
+   "draws": 0,
+   "losses": 9,
+   "plan_rate": 0.732,
+   "expansions_per_move": 8.3,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 8.26,
+   "ms_per_move": 17.01,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.1667,
+   "delta_ci95": [
+    -0.0417,
+    0.375
+   ]
+  },
+  {
+   "agent": "oracle@meeseeks:0.5",
+   "opponent": "uct-100",
+   "games": 24,
+   "score": 0.7083,
+   "score_ci95": [
+    0.5417,
+    0.875
+   ],
+   "wins": 17,
+   "draws": 0,
+   "losses": 7,
+   "plan_rate": 0.858,
+   "expansions_per_move": 18.2,
+   "probes_per_move": 0.0,
+   "imagination_calls_per_move": 18.2,
+   "ms_per_move": 35.73,
+   "illegal_moves": 0,
+   "delta_vs_morty": 0.25,
+   "delta_ci95": [
+    0.0417,
+    0.4583
+   ]
+  }
+ ]
+}

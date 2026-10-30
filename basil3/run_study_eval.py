@@ -13,8 +13,8 @@ from pathlib import Path
 from .aggregate import combine
 from .cronenberg import evaluate_cronenberg
 from .evaluate import main as eval_main
-from .make_paper_figures import (aggregate_cronenberg, aggregate_meeseeks_summaries,
-                                 main as figs_main)
+from .make_paper_figures import (SCIENTIFIC_AGENT_NAMES, aggregate_cronenberg,
+                                 aggregate_meeseeks_summaries, main as figs_main)
 
 
 AGENTS = [
@@ -54,6 +54,11 @@ def _eval_one_seed(args_tuple):
             "--opponents", ",".join(opponents),
             "--out", str(out_eval),
         ]
+        if split == "test":
+            try:
+                eval_main(eval_argv + ["--preregister"])
+            except SystemExit:
+                pass
         eval_main(eval_argv)
     out_cron = Path(seed_dir) / f"cronenberg_{split}.json"
     if not out_cron.exists():
@@ -62,50 +67,62 @@ def _eval_one_seed(args_tuple):
     return str(out_eval)
 
 
+CRON_SCIENTIFIC_NAMES = {
+    "blind_morty": "Blind FastPolicy (0 sims)",
+    "cfc_morty": "BHF + FastPolicy (0 sims)",
+    "cfc_meeseeks": "BHF + Posterior-Sampled Search + LTH (adaptive)",
+    "cfc_citadel": "BHF + Posterior-Sampled Search (full)",
+    "full_info_citadel": "Full-Info BASIL-3 (visible rules ceiling)",
+}
+
+
 def write_summary_md(root: Path, split: str, m_sum: dict, eval_sum: dict, cron_sum: dict):
     lat = m_sum["modes"]["latent"]["stats"]
     sim = m_sum["modes"]["sim"]["stats"]
     lines = [
-        "# BASIL-3 v2 (Citadel v2 + Mr. Meeseeks + Central Finite Curve) Study Summary",
+        "# BASIL-3 (Holographic Manifold World Model + Live Telemetry Halting + Bayesian Hypothesis Filtration) Study Summary",
         "",
         f"* **Split**: `{split}` (rule-family-disjoint procedural universes)",
         f"* **Independent training seeds**: `{cron_sum['n_seeds']}`",
         "",
-        "## 1. Stopping-Regret Correlation & Anytime Halting Calibration (Mr. Meeseeks)",
+        "## 1. Stopping-Regret Correlation & Anytime Halting Calibration (Live Telemetry Halting)",
         "",
         "| Search Mode | Pre-Search ($t=0$) Regret Corr $r$ | Live In-Search ($t>0$) Regret Corr $r$ | All-Checkpoints Corr $r$ | Final-Move Agreement Acc |",
         "|---|---:|---:|---:|---:|",
-        f"| **Citadel (Latent World Model)** | `{lat['heldout_regret_corr_t0']:+.3f}` | **`{lat['heldout_regret_corr_live']:+.3f}`** | `{lat['heldout_regret_corr']:+.3f}` | `{100*lat['heldout_agree_acc']:.1f}%` (base `{100*lat['heldout_agree_base']:.1f}%`) |",
-        f"| **Oracle (Real-Rules Search)** | `{sim['heldout_regret_corr_t0']:+.3f}` | **`{sim['heldout_regret_corr_live']:+.3f}`** | `{sim['heldout_regret_corr']:+.3f}` | `{100*sim['heldout_agree_acc']:.1f}%` (base `{100*sim['heldout_agree_base']:.1f}%`) |",
+        f"| **BASIL-3 (Latent World Model)** | `{lat['heldout_regret_corr_t0']:+.3f}` | **`{lat['heldout_regret_corr_live']:+.3f}`** | `{lat['heldout_regret_corr']:+.3f}` | `{100*lat['heldout_agree_acc']:.1f}%` (base `{100*lat['heldout_agree_base']:.1f}%`) |",
+        f"| **OracleSim (Real-Rules Search)** | `{sim['heldout_regret_corr_t0']:+.3f}` | **`{sim['heldout_regret_corr_live']:+.3f}`** | `{sim['heldout_regret_corr']:+.3f}` | `{100*sim['heldout_agree_acc']:.1f}%` (base `{100*sim['heldout_agree_base']:.1f}%`) |",
         "",
-        "## 2. Online Game-Play Performance Across Seeds",
+        f"## 2. Online Game-Play Performance Across Seeds (`{split}` split)",
         "",
-        "| Agent | Opponent | Score | 95% Bootstrap CI | $\\Delta$ vs `morty` | $\\Delta$ 95% CI | Plan Rate | Exps/Move |",
-        "|---|---|---:|---|---:|---|---:|---:|",
+        "| Agent Architecture | CLI Spec | Opponent | Score | 95% Bootstrap CI | $\\Delta$ vs `FastPolicy` | $\\Delta$ 95% CI | Plan Rate | Exps/Move |",
+        "|---|---|---|---:|---|---:|---|---:|---:|",
     ]
     for r in eval_sum["results"]:
         d = r.get("delta")
         d_str = f"`{d:+.3f}`" if d is not None else "—"
         d_ci = f"`{r['delta_ci95']}`" if "delta_ci95" in r else "—"
+        sci_name = SCIENTIFIC_AGENT_NAMES.get(r["agent"], r["agent"]).replace("\\%", "%").replace("$", "")
         lines.append(
-            f"| `{r['agent']}` | `{r['opponent']}` | **{r['score']:.3f}** | `{r['score_ci95']}` | "
+            f"| {sci_name} | `{r['agent']}` | `{r['opponent']}` | **{r['score']:.3f}** | `{r['score_ci95']}` | "
             f"{d_str} | {d_ci} | `{r['plan_rate']:.2f}` | `{r['expansions_per_move']:.1f}` |"
         )
     lines += [
         "",
-        "## 3. Cronenberg Mode (Hidden Rules) & Central Finite Curve Adaptation",
+        f"## 3. Hidden-Rule Regime & Exact Bayesian Hypothesis Filtration (`{split}` split)",
         "",
         f"* **Posterior Entropy Collapse**: `{cron_sum['posterior_curve']['entropy_bits_start'][0]:.2f}` bits (Ep 1 start, `{cron_sum['posterior_curve']['alive_start'][0]:.1f}` candidate universes) $\\to$ **`{cron_sum['posterior_curve']['entropy_bits_end'][-1]:.2f}` bits** (Ep 6 end, `{cron_sum['posterior_curve']['alive_end'][-1]:.1f}` surviving candidates)",
         "",
-        "| Cronenberg Agent Mode | Ep 1–2 Score | Ep 5–6 Score | Mean Match Score | Mean Exps/Move |",
-        "|---|---:|---:|---:|---:|",
+        "| Hidden-Rule Agent Architecture | CLI Mode | Ep 1–2 Score | Ep 5–6 Score | Mean Match Score | Mean Exps/Move |",
+        "|---|---|---:|---:|---:|---:|",
     ]
     for mk, md in cron_sum["modes"].items():
+        sci_m = CRON_SCIENTIFIC_NAMES.get(mk, mk)
         lines.append(
-            f"| `{mk}` | `{md['early_score_ep1_2']:.3f}` | `{md['late_score_ep5_6']:.3f}` | "
+            f"| {sci_m} | `{mk}` | `{md['early_score_ep1_2']:.3f}` | `{md['late_score_ep5_6']:.3f}` | "
             f"**{md['mean_score']:.3f}** | `{md['mean_expansions']:.1f}` |"
         )
-    (root / "SUMMARY.md").write_text("\n".join(lines) + "\n")
+    out_file = root / ("SUMMARY.md" if split == "val" else f"SUMMARY_{split.upper()}.md")
+    out_file.write_text("\n".join(lines) + "\n")
 
 
 def main(argv=None):

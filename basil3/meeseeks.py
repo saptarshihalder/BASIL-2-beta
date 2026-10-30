@@ -1,11 +1,11 @@
-"""Mr. Meeseeks: learned anytime halting for tree search ("exists only until the problem is solved").
+"""Live Telemetry Halting (LTH): self-supervised anytime optimal stopping for tree search.
 
-A pre-search gate decides once, before thinking, whether to think. Meeseeks instead watches the
-search while it runs and, every `check_every` simulations, decides whether more thinking is still
-worth it. It works with either search in this package:
+A pre-search gate decides once, before thinking, whether to think. Live Telemetry Halting instead
+monitors tree search while it runs and, every `check_every` simulations, decides whether additional
+simulations are worth their compute cost. It works with either search mode in this package:
 
-    kind="latent"   search inside the learned world model (Citadel; no simulator at decision time)
-    kind="sim"      search on the real rules with the learned priors and values (Oracle)
+    kind="latent"   search inside the learned world model (BASIL-3; no simulator at decision time)
+    kind="sim"      search on the real rules with the learned priors and values (OracleSim)
 
 Training targets are self-supervised and dense. For one position we run the full-budget search
 once and record root statistics at every checkpoint t. Because a search stopped after t simulations
@@ -17,12 +17,12 @@ is exactly the prefix of the full search, the label for checkpoint t is known fr
     agree_t  = [a_t == a_T]
 
 so every searched position gives T / check_every labels, all measured by one search instead of
-the difference of two noisy reference searches (the label noise that sank the pre-search VOC gate).
-At t = 0 the move is the fast policy's, so the same model also decides whether to think at all.
+the difference of two noisy reference searches (the label noise that degrades pre-search VOC).
+At t = 0 the move is the fast policy's, so the same model also decides whether to search at all.
 
-Every halting rule here (fixed budgets, classic early stopping, the confidence pre-gate and
-Meeseeks) is a function of the live features, so all of them are calibrated to the same average
-compute on validation traces by exact offline replay, then run online in games.
+Every halting rule here (fixed budgets, classic early stopping, the confidence pre-gate, and
+Live Telemetry Halting) is a function of the live features, so all of them are calibrated to the
+same average compute on validation traces by exact offline replay, then run online in games.
 """
 from __future__ import annotations
 

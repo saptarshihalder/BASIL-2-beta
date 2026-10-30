@@ -1,17 +1,16 @@
-"""Players and the planning gate.
+"""Players and the pre-search planning gate.
 
 The evaluator gives every agent the observation and the legal-move mask. Only agents with
 needs_simulator = True (classic opponents and the perfect-model reference) also get a copy of the
-real game. Morty and the Citadel agents never see it, so they cannot plan with the true rules.
+real game. FastPolicyAgent and WorldModelAgent never see it, so they cannot plan with the true rules.
 
-The gate ("Meeseeks": summoned for one hard move, gone afterwards) decides when Morty's instinct
-is not enough and Portal search is worth its cost:
+The pre-search gate decides when the fast policy network is not enough and latent world-model
+search is worth its compute cost:
   never / always / random  baselines
-  confidence               plan when Morty's top move probability is low
-  disagreement             plan when the Ricks disagree about the top moves' outcomes
-  voc                      plan when a small learned model predicts that searching will gain the
-                           most value per move (value of computation; the model is trained on
-                           train universes against outcomes checked with the real rules)
+  confidence               plan when the fast policy's top move probability is low
+  disagreement             plan when the dynamics ensemble disagrees about the top moves' outcomes
+  voc                      plan when a learned value-of-computation model predicts that searching
+                           will gain the most value per move
 Score gates plan when score >= threshold. Thresholds are chosen on validation positions so every
 gate plans on the same fraction of moves (its budget); an online quantile controller keeps that
 rate in deployment.
@@ -175,3 +174,8 @@ class CitadelAgent:
         self.expansions += n
         self.search_calls += n * self.net.n_ricks
         return int(np.argmax(visits))
+
+
+# Scientific aliases
+FastPolicyAgent = MortyAgent
+WorldModelAgent = CitadelAgent

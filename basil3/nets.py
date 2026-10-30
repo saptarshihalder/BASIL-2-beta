@@ -1,24 +1,25 @@
-"""Citadel networks: Toroidal Portal-Aware & Translation-Equivariant World Model with
+"""BASIL-3 World Model Networks: Toroidal Boundary-Aware & Translation-Equivariant World Model with
 Holographic Board-State Carrier, Dihedral-Torus Motif Resonance, and Manifold-Coupled Imagination.
 
-    observation --h--> latent s --f--> (move logits, value, legal-move logits)      "Morty"
-    (s, a) --g_k--> (next latent s', P(move a wins)),  k = 1..K                    "Council of Ricks"
+    observation --h--> latent s --f--> (move logits, value, legal-move logits)      Fast Policy (System 1)
+    (s, a) --g_k--> (next latent s', P(move a wins)),  k = 1..K                    Dynamics Ensemble (System 2)
 
 Key architectural invariants:
 * Canonical mover's perspective: every value is from the point of view of the player to move, so
   negamax backups flip sign at every ply by construction.
-* Pinned Universe DNA + Holographic Board Carrier:
+* Pinned Rule Invariants + Holographic Board Carrier:
   - The 10 static rule/geometry planes of the observation (obs[:, 3:13]: blocked, on_board,
     gravity, wrap_h, wrap_v, and the 5 winning shapes I, O, T, S, L) are pinned into s[:, -10:].
   - The 3 dynamic board occupancy planes (b_my, b_opp, b_empty) are carried losslessly in the
     binary-exponent sub-LSB mantissa of s[:, :3] (`pack_hologram` / `unpack_hologram`) and updated
     via perspective-swapped stone placement at every imagined ply.
-* Dihedral-Torus Win Density (`torus_win_density`) & Ballistic Gravity Legality (`ballistic_legal`):
+* Dihedral-Torus Win Density (`torus_win_density`), Adjoint Tactical Horizon (`torus_tactical_field`),
+  & Ballistic Gravity Legality (`ballistic_legal`):
   - Evaluates the 19 D_4 orientations of the 5 canonical 4-cell lattice motifs across variable H x W
     toroidal boundaries and computes exact column-fall stopping masks via differentiable cumprod.
 * Manifold-Coupled Imagination (`Citadel.imagine`):
   - Projects the transitioned holographic state back onto the Representation manifold `self.h`
-    while preserving each Rick's bootstrapped epistemic dynamic residual for uncertainty estimation.
+    while preserving each ensemble member's bootstrapped epistemic dynamic residual for uncertainty estimation.
 """
 import numpy as np
 import torch
@@ -406,3 +407,9 @@ class Citadel(nn.Module):
 def build(cfg: dict) -> Citadel:
     keys = ("ch", "repr_blocks", "dyn_blocks", "n_ricks", "prior_scale")
     return Citadel(**{k: cfg[k] for k in keys if k in cfg})
+
+
+# Scientific aliases for publication and API clarity
+boundary_impulse = portal_impulse
+DynamicsMember = Rick
+HolographicWorldModel = Citadel

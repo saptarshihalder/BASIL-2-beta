@@ -1,25 +1,25 @@
-"""Cronenberg Mode & The Central Finite Curve: In-Context Bayesian Rule Induction + Multiverse Search.
+"""Hidden-Rule Regime & Exact Bayesian Hypothesis Filtration (BHF) with Posterior-Sampled Search.
 
 In standard Multiverse, the 8 rule indicator planes of the observation (obs[5:13]: gravity,
 wrap_h, wrap_v, and the 5 winning tetromino shapes I, O, T, S, L) are visible to the agent.
-In Cronenberg Mode, the agent is dropped into a universe with HIDDEN rules (obs[5:13] masked out)
+In the Hidden-Rule Regime, the agent is deployed into a universe with masked rules (obs[5:13] zeroed)
 and plays a match of M consecutive games in that universe.
 
 Because the hypothesis space of rules for a fixed board geometry (H, W, blocked) is finite
-(at most 90 candidate rule combinations in the Central Finite Curve), we can maintain the exact
-Bayesian posterior P(u | history) over candidate universes as the agent observes legal-move masks,
-non-terminal board positions, and game outcomes across the match:
-  * Turn 1 legal moves immediately identify whether gravity is active.
+(at most 90 candidate rule combinations), the agent maintains the exact Bayesian posterior
+P(u | history) over candidate universes as it observes legal-move masks, non-terminal board
+positions, and game outcomes across the match:
+  * Turn 1 legal moves immediately identify whether column gravity is active.
   * Every non-terminal board falsifies any rule hypothesis under which a player has already
     completed a winning shape.
   * Every game won by a stone placement falsifies any rule hypothesis under which that stone
     did not complete a winning shape.
 
-During Multiverse Thompson Search (MultiverseAdapter), each of the K Ricks in Citadel samples its
-own rule hypothesis u_k ~ P(u | history) from the Central Finite Curve and pins u_k's rule DNA
-into its latent state s_k. The ensemble disagreement q_std therefore captures both epistemic
-world-model uncertainty and rule-hypothesis uncertainty, naturally shrinking as the agent
-discovers the laws of physics of the current universe across the match.
+During Posterior-Sampled World-Model Search (MultiverseAdapter), each of the K dynamics ensemble
+members samples its own rule hypothesis u_k ~ P(u | history) from the posterior and pins u_k's
+rule representation into its latent state s_k. The ensemble disagreement q_std therefore captures
+both epistemic world-model uncertainty and rule-hypothesis uncertainty, shrinking monotonically as
+the agent identifies the active mechanics of the environment across the match.
 """
 from __future__ import annotations
 

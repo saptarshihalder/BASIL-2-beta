@@ -1,0 +1,721 @@
+{
+  "reference": "morty",
+  "files": [
+    "results/basil3_v2/seed_0/eval_test.json",
+    "results/basil3_v2/seed_1/eval_test.json",
+    "results/basil3_v2/seed_2/eval_test.json"
+  ],
+  "eval_args": {
+    "split": "test",
+    "universes": 12,
+    "openings": 1,
+    "agents": "morty,citadel@always,citadel@meeseeks:0.1,citadel@meeseeks:0.25,citadel@meeseeks:0.5,citadel@meeseeks_agree:0.25,citadel@meeseeks_pre:0.25,citadel@share:0.25,citadel@unreach:0.25,citadel@voc:0.25,citadel@disagreement:0.25,citadel@confidence:0.25,citadel@random:0.25,oracle,oracle@meeseeks:0.1,oracle@meeseeks:0.25,oracle@meeseeks:0.5",
+    "opponents": "greedy,uct-100",
+    "sims": 48,
+    "beta": 0.25
+  },
+  "results": [
+    {
+      "agent": "morty",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.5972,
+      "score_ci95": [
+        0.4167,
+        0.7639
+      ],
+      "plan_rate": 0.0,
+      "expansions_per_move": 0.0,
+      "imagination_calls_per_move": 0.0,
+      "ms_per_move": 1.18,
+      "illegal_moves": 0.0
+    },
+    {
+      "agent": "citadel@always",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.9375,
+      "score_ci95": [
+        0.8333,
+        1.0
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 34.067,
+      "imagination_calls_per_move": 136.357,
+      "ms_per_move": 215.517,
+      "illegal_moves": 0.0,
+      "delta": 0.3403,
+      "delta_vs_morty": 0.3403,
+      "delta_ci95": [
+        0.1806,
+        0.5
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.1",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6458,
+      "score_ci95": [
+        0.4514,
+        0.8333
+      ],
+      "plan_rate": 0.324,
+      "expansions_per_move": 3.8,
+      "imagination_calls_per_move": 15.183,
+      "ms_per_move": 25.25,
+      "illegal_moves": 0.0,
+      "delta": 0.0486,
+      "delta_vs_morty": 0.0486,
+      "delta_ci95": [
+        -0.028,
+        0.1389
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.75,
+      "score_ci95": [
+        0.5972,
+        0.8889
+      ],
+      "plan_rate": 0.728,
+      "expansions_per_move": 10.767,
+      "imagination_calls_per_move": 43.06,
+      "ms_per_move": 69.127,
+      "illegal_moves": 0.0,
+      "delta": 0.1528,
+      "delta_vs_morty": 0.1528,
+      "delta_ci95": [
+        0.0417,
+        0.2708
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.5",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.7778,
+      "score_ci95": [
+        0.625,
+        0.9167
+      ],
+      "plan_rate": 0.864,
+      "expansions_per_move": 20.133,
+      "imagination_calls_per_move": 80.527,
+      "ms_per_move": 127.567,
+      "illegal_moves": 0.0,
+      "delta": 0.1806,
+      "delta_vs_morty": 0.1806,
+      "delta_ci95": [
+        0.0417,
+        0.3194
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks_agree:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.7639,
+      "score_ci95": [
+        0.5972,
+        0.9097
+      ],
+      "plan_rate": 0.772,
+      "expansions_per_move": 10.867,
+      "imagination_calls_per_move": 43.473,
+      "ms_per_move": 69.697,
+      "illegal_moves": 0.0,
+      "delta": 0.1667,
+      "delta_vs_morty": 0.1667,
+      "delta_ci95": [
+        0.0556,
+        0.3056
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks_pre:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6806,
+      "score_ci95": [
+        0.5,
+        0.8472
+      ],
+      "plan_rate": 0.262,
+      "expansions_per_move": 9.2,
+      "imagination_calls_per_move": 36.817,
+      "ms_per_move": 59.46,
+      "illegal_moves": 0.0,
+      "delta": 0.0833,
+      "delta_vs_morty": 0.0833,
+      "delta_ci95": [
+        -0.0417,
+        0.2083
+      ]
+    },
+    {
+      "agent": "citadel@share:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.8056,
+      "score_ci95": [
+        0.6389,
+        0.9306
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 9.833,
+      "imagination_calls_per_move": 39.313,
+      "ms_per_move": 63.093,
+      "illegal_moves": 0.0,
+      "delta": 0.2083,
+      "delta_vs_morty": 0.2083,
+      "delta_ci95": [
+        0.0833,
+        0.3333
+      ]
+    },
+    {
+      "agent": "citadel@unreach:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.7431,
+      "score_ci95": [
+        0.5484,
+        0.9167
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 9.1,
+      "imagination_calls_per_move": 36.397,
+      "ms_per_move": 58.307,
+      "illegal_moves": 0.0,
+      "delta": 0.1458,
+      "delta_vs_morty": 0.1458,
+      "delta_ci95": [
+        0.0417,
+        0.25
+      ]
+    },
+    {
+      "agent": "citadel@voc:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.7431,
+      "score_ci95": [
+        0.5832,
+        0.896
+      ],
+      "plan_rate": 0.288,
+      "expansions_per_move": 10.7,
+      "imagination_calls_per_move": 54.613,
+      "ms_per_move": 78.4,
+      "illegal_moves": 0.0,
+      "delta": 0.1458,
+      "delta_vs_morty": 0.1458,
+      "delta_ci95": [
+        -0.0002,
+        0.3125
+      ]
+    },
+    {
+      "agent": "citadel@disagreement:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6042,
+      "score_ci95": [
+        0.4028,
+        0.7917
+      ],
+      "plan_rate": 0.163,
+      "expansions_per_move": 7.2,
+      "imagination_calls_per_move": 40.777,
+      "ms_per_move": 56.773,
+      "illegal_moves": 0.0,
+      "delta": 0.0069,
+      "delta_vs_morty": 0.0069,
+      "delta_ci95": [
+        -0.0972,
+        0.1111
+      ]
+    },
+    {
+      "agent": "citadel@confidence:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6875,
+      "score_ci95": [
+        0.5417,
+        0.8333
+      ],
+      "plan_rate": 0.323,
+      "expansions_per_move": 13.833,
+      "imagination_calls_per_move": 67.217,
+      "ms_per_move": 97.767,
+      "illegal_moves": 0.0,
+      "delta": 0.0903,
+      "delta_vs_morty": 0.0903,
+      "delta_ci95": [
+        -0.0347,
+        0.2222
+      ]
+    },
+    {
+      "agent": "citadel@random:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6389,
+      "score_ci95": [
+        0.4167,
+        0.8472
+      ],
+      "plan_rate": 0.22,
+      "expansions_per_move": 8.2,
+      "imagination_calls_per_move": 44.803,
+      "ms_per_move": 62.963,
+      "illegal_moves": 0.0,
+      "delta": 0.0417,
+      "delta_vs_morty": 0.0417,
+      "delta_ci95": [
+        -0.0833,
+        0.2083
+      ]
+    },
+    {
+      "agent": "oracle",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.9028,
+      "score_ci95": [
+        0.7845,
+        1.0
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 33.733,
+      "imagination_calls_per_move": 0.0,
+      "ms_per_move": 61.083,
+      "illegal_moves": 0.0,
+      "delta": 0.3056,
+      "delta_vs_morty": 0.3056,
+      "delta_ci95": [
+        0.1667,
+        0.4583
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.1",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.6042,
+      "score_ci95": [
+        0.4028,
+        0.7917
+      ],
+      "plan_rate": 0.347,
+      "expansions_per_move": 4.0,
+      "imagination_calls_per_move": 4.027,
+      "ms_per_move": 8.9,
+      "illegal_moves": 0.0,
+      "delta": 0.0069,
+      "delta_vs_morty": 0.0069,
+      "delta_ci95": [
+        -0.0833,
+        0.0833
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.25",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.7708,
+      "score_ci95": [
+        0.5833,
+        0.9306
+      ],
+      "plan_rate": 0.692,
+      "expansions_per_move": 9.567,
+      "imagination_calls_per_move": 9.603,
+      "ms_per_move": 19.177,
+      "illegal_moves": 0.0,
+      "delta": 0.1736,
+      "delta_vs_morty": 0.1736,
+      "delta_ci95": [
+        0.0625,
+        0.2917
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.5",
+      "opponent": "greedy",
+      "seeds": 3,
+      "score": 0.8472,
+      "score_ci95": [
+        0.7083,
+        0.9583
+      ],
+      "plan_rate": 0.852,
+      "expansions_per_move": 18.133,
+      "imagination_calls_per_move": 18.15,
+      "ms_per_move": 34.767,
+      "illegal_moves": 0.0,
+      "delta": 0.25,
+      "delta_vs_morty": 0.25,
+      "delta_ci95": [
+        0.1042,
+        0.3889
+      ]
+    },
+    {
+      "agent": "morty",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.4861,
+      "score_ci95": [
+        0.2917,
+        0.6667
+      ],
+      "plan_rate": 0.0,
+      "expansions_per_move": 0.0,
+      "imagination_calls_per_move": 0.0,
+      "ms_per_move": 1.383,
+      "illegal_moves": 0.0
+    },
+    {
+      "agent": "citadel@always",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.7222,
+      "score_ci95": [
+        0.5417,
+        0.875
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 35.833,
+      "imagination_calls_per_move": 143.343,
+      "ms_per_move": 226.587,
+      "illegal_moves": 0.0,
+      "delta": 0.2361,
+      "delta_vs_morty": 0.2361,
+      "delta_ci95": [
+        0.0417,
+        0.4028
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.1",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5417,
+      "score_ci95": [
+        0.375,
+        0.7083
+      ],
+      "plan_rate": 0.289,
+      "expansions_per_move": 3.733,
+      "imagination_calls_per_move": 14.843,
+      "ms_per_move": 25.133,
+      "illegal_moves": 0.0,
+      "delta": 0.0556,
+      "delta_vs_morty": 0.0556,
+      "delta_ci95": [
+        -0.0556,
+        0.1948
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6389,
+      "score_ci95": [
+        0.458,
+        0.8194
+      ],
+      "plan_rate": 0.649,
+      "expansions_per_move": 9.967,
+      "imagination_calls_per_move": 39.8,
+      "ms_per_move": 64.45,
+      "illegal_moves": 0.0,
+      "delta": 0.1528,
+      "delta_vs_morty": 0.1528,
+      "delta_ci95": [
+        -0.0139,
+        0.3333
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks:0.5",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6875,
+      "score_ci95": [
+        0.5,
+        0.8543
+      ],
+      "plan_rate": 0.863,
+      "expansions_per_move": 18.8,
+      "imagination_calls_per_move": 75.23,
+      "ms_per_move": 120.293,
+      "illegal_moves": 0.0,
+      "delta": 0.2014,
+      "delta_vs_morty": 0.2014,
+      "delta_ci95": [
+        0.0347,
+        0.3335
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks_agree:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6806,
+      "score_ci95": [
+        0.5208,
+        0.8333
+      ],
+      "plan_rate": 0.774,
+      "expansions_per_move": 10.533,
+      "imagination_calls_per_move": 42.067,
+      "ms_per_move": 68.13,
+      "illegal_moves": 0.0,
+      "delta": 0.1944,
+      "delta_vs_morty": 0.1944,
+      "delta_ci95": [
+        0.0417,
+        0.3472
+      ]
+    },
+    {
+      "agent": "citadel@meeseeks_pre:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5556,
+      "score_ci95": [
+        0.3608,
+        0.7361
+      ],
+      "plan_rate": 0.238,
+      "expansions_per_move": 8.4,
+      "imagination_calls_per_move": 33.683,
+      "ms_per_move": 54.91,
+      "illegal_moves": 0.0,
+      "delta": 0.0694,
+      "delta_vs_morty": 0.0694,
+      "delta_ci95": [
+        -0.1111,
+        0.25
+      ]
+    },
+    {
+      "agent": "citadel@share:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6875,
+      "score_ci95": [
+        0.4583,
+        0.8611
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 8.9,
+      "imagination_calls_per_move": 35.447,
+      "ms_per_move": 57.457,
+      "illegal_moves": 0.0,
+      "delta": 0.2014,
+      "delta_vs_morty": 0.2014,
+      "delta_ci95": [
+        0.0,
+        0.375
+      ]
+    },
+    {
+      "agent": "citadel@unreach:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.7014,
+      "score_ci95": [
+        0.5417,
+        0.8542
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 8.967,
+      "imagination_calls_per_move": 36.017,
+      "ms_per_move": 58.027,
+      "illegal_moves": 0.0,
+      "delta": 0.2153,
+      "delta_vs_morty": 0.2153,
+      "delta_ci95": [
+        0.0833,
+        0.3472
+      ]
+    },
+    {
+      "agent": "citadel@voc:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6319,
+      "score_ci95": [
+        0.4028,
+        0.8472
+      ],
+      "plan_rate": 0.277,
+      "expansions_per_move": 9.9,
+      "imagination_calls_per_move": 51.473,
+      "ms_per_move": 74.037,
+      "illegal_moves": 0.0,
+      "delta": 0.1458,
+      "delta_vs_morty": 0.1458,
+      "delta_ci95": [
+        -0.0833,
+        0.3889
+      ]
+    },
+    {
+      "agent": "citadel@disagreement:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5278,
+      "score_ci95": [
+        0.3333,
+        0.7083
+      ],
+      "plan_rate": 0.178,
+      "expansions_per_move": 7.667,
+      "imagination_calls_per_move": 42.75,
+      "ms_per_move": 60.21,
+      "illegal_moves": 0.0,
+      "delta": 0.0417,
+      "delta_vs_morty": 0.0417,
+      "delta_ci95": [
+        -0.1389,
+        0.1667
+      ]
+    },
+    {
+      "agent": "citadel@confidence:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5069,
+      "score_ci95": [
+        0.2774,
+        0.7361
+      ],
+      "plan_rate": 0.293,
+      "expansions_per_move": 11.533,
+      "imagination_calls_per_move": 58.043,
+      "ms_per_move": 83.957,
+      "illegal_moves": 0.0,
+      "delta": 0.0208,
+      "delta_vs_morty": 0.0208,
+      "delta_ci95": [
+        -0.2087,
+        0.2083
+      ]
+    },
+    {
+      "agent": "citadel@random:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5486,
+      "score_ci95": [
+        0.375,
+        0.7222
+      ],
+      "plan_rate": 0.203,
+      "expansions_per_move": 6.933,
+      "imagination_calls_per_move": 39.657,
+      "ms_per_move": 54.783,
+      "illegal_moves": 0.0,
+      "delta": 0.0625,
+      "delta_vs_morty": 0.0625,
+      "delta_ci95": [
+        -0.0417,
+        0.1597
+      ]
+    },
+    {
+      "agent": "oracle",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.7083,
+      "score_ci95": [
+        0.5417,
+        0.8472
+      ],
+      "plan_rate": 1.0,
+      "expansions_per_move": 36.033,
+      "imagination_calls_per_move": 0.0,
+      "ms_per_move": 65.84,
+      "illegal_moves": 0.0,
+      "delta": 0.2222,
+      "delta_vs_morty": 0.2222,
+      "delta_ci95": [
+        0.0139,
+        0.4028
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.1",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.5139,
+      "score_ci95": [
+        0.333,
+        0.6806
+      ],
+      "plan_rate": 0.315,
+      "expansions_per_move": 3.233,
+      "imagination_calls_per_move": 3.26,
+      "ms_per_move": 7.67,
+      "illegal_moves": 0.0,
+      "delta": 0.0278,
+      "delta_vs_morty": 0.0278,
+      "delta_ci95": [
+        -0.1111,
+        0.1528
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.25",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.6528,
+      "score_ci95": [
+        0.4444,
+        0.8333
+      ],
+      "plan_rate": 0.708,
+      "expansions_per_move": 9.7,
+      "imagination_calls_per_move": 9.703,
+      "ms_per_move": 19.7,
+      "illegal_moves": 0.0,
+      "delta": 0.1667,
+      "delta_vs_morty": 0.1667,
+      "delta_ci95": [
+        0.0139,
+        0.3333
+      ]
+    },
+    {
+      "agent": "oracle@meeseeks:0.5",
+      "opponent": "uct-100",
+      "seeds": 3,
+      "score": 0.7083,
+      "score_ci95": [
+        0.5347,
+        0.8681
+      ],
+      "plan_rate": 0.865,
+      "expansions_per_move": 18.133,
+      "imagination_calls_per_move": 18.12,
+      "ms_per_move": 35.387,
+      "illegal_moves": 0.0,
+      "delta": 0.2222,
+      "delta_vs_morty": 0.2222,
+      "delta_ci95": [
+        0.0833,
+        0.375
+      ]
+    }
+  ]
+}

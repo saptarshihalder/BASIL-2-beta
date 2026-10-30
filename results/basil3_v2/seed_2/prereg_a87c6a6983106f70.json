@@ -1,0 +1,18 @@
+{
+ "hash": "a87c6a6983106f70",
+ "args": {
+  "run": "results/basil3_v2/seed_2",
+  "split": "test",
+  "universes": 12,
+  "openings": 1,
+  "agents": "morty,citadel@always,citadel@meeseeks:0.1,citadel@meeseeks:0.25,citadel@meeseeks:0.5,citadel@meeseeks_agree:0.25,citadel@meeseeks_pre:0.25,citadel@share:0.25,citadel@unreach:0.25,citadel@voc:0.25,citadel@disagreement:0.25,citadel@confidence:0.25,citadel@random:0.25,oracle,oracle@meeseeks:0.1,oracle@meeseeks:0.25,oracle@meeseeks:0.5",
+  "opponents": "greedy,uct-100",
+  "reference": "morty",
+  "sims": 48,
+  "beta": 0.25,
+  "device": "cpu",
+  "preregister": true,
+  "out": "results/basil3_v2/seed_2/eval_test.json"
+ },
+ "time": "2026-10-30 15:03:44"
+}

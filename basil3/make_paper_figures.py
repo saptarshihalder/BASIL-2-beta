@@ -1,14 +1,14 @@
 """Generate publication figures and LaTeX/Markdown tables for the BASIL-3 paper.
 
 Produces four figures in `paper/figures/` (both .pdf and .png at 300 DPI):
-  1. fig1_halting_diagnosis: Pre-search VOC failure vs. Mr. Meeseeks live telemetry correlation
+  1. fig1_halting_diagnosis: Pre-search VOC failure vs. Live Telemetry Halting (LTH) correlation
      and offline validation stopping-regret curves across halting rules.
   2. fig2_pareto_compute: Online game-play score vs. model expansions per move on held-out rule
-     families (Citadel latent search and Oracle real-rule search).
-  3. fig3_cronenberg_cfc: Cronenberg hidden-rule match study: Central Finite Curve exact Bayesian
+     families (BASIL-3 latent world-model search and OracleSim real-rule search).
+  3. fig3_cronenberg_cfc: Hidden-rule regime match study: Exact Bayesian Hypothesis Filtration (BHF)
      rule posterior entropy collapse and score progression across episodes.
   4. fig4_architecture_comparison: Training dynamics and unseen-family generalization comparing
-     the baseline non-equivariant Citadel against Toroidal Portal-Aware & Equivariant Citadel.
+     the baseline non-equivariant world model against Toroidal-Equivariant BASIL-3.
 """
 from __future__ import annotations
 
@@ -20,6 +20,27 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+SCIENTIFIC_AGENT_NAMES = {
+    "morty": "FastPolicy ($0$ sims)",
+    "citadel@always": "BASIL-3 (Full Search)",
+    "citadel@meeseeks:0.1": "BASIL-3 + LTH-Regret ($10\\%$)",
+    "citadel@meeseeks:0.25": "BASIL-3 + LTH-Regret ($25\\%$)",
+    "citadel@meeseeks:0.5": "BASIL-3 + LTH-Regret ($50\\%$)",
+    "citadel@meeseeks_agree:0.25": "BASIL-3 + LTH-Agree ($25\\%$)",
+    "citadel@meeseeks_pre:0.25": "BASIL-3 + Pre-Regret ($25\\%$)",
+    "citadel@share:0.25": "BASIL-3 + VisitShare ($25\\%$)",
+    "citadel@unreach:0.25": "BASIL-3 + UnreachStop ($25\\%$)",
+    "citadel@voc:0.25": "BASIL-3 + Pre-VOC ($25\\%$)",
+    "citadel@disagreement:0.25": "BASIL-3 + Disagreement ($25\\%$)",
+    "citadel@confidence:0.25": "BASIL-3 + Confidence ($25\\%$)",
+    "citadel@random:0.25": "BASIL-3 + RandomGate ($25\\%$)",
+    "oracle": "OracleSim (Full Search)",
+    "oracle@meeseeks:0.1": "OracleSim + LTH-Regret ($10\\%$)",
+    "oracle@meeseeks:0.25": "OracleSim + LTH-Regret ($25\\%$)",
+    "oracle@meeseeks:0.5": "OracleSim + LTH-Regret ($50\\%$)",
+}
 
 
 plt.rcParams.update({
@@ -57,10 +78,10 @@ def plot_fig1_halting_diagnosis(v1_train: dict, m_summary: dict, out_dir: Path):
     labels = [
         "VOC v1\n(t=0 diff)",
         "VOC v2\n(t=0 diff)",
-        "Meeseeks\nt=0 (Lat)",
-        "Meeseeks\nLive (Lat)",
-        "Meeseeks\nt=0 (Sim)",
-        "Meeseeks\nLive (Sim)",
+        "LTH t=0\n(Latent)",
+        "LTH Live\n(Latent)",
+        "LTH t=0\n(Sim)",
+        "LTH Live\n(Sim)",
     ]
     vals = [
         v1_corr,
@@ -76,7 +97,7 @@ def plot_fig1_halting_diagnosis(v1_train: dict, m_summary: dict, out_dir: Path):
     ax1.set_xticks(range(len(labels)))
     ax1.set_xticklabels(labels, fontsize=8)
     ax1.set_ylabel("Held-out correlation with stopping regret ($r$)")
-    ax1.set_title("(a) Why Pre-Search VOC Fails vs. Live Halting")
+    ax1.set_title("(a) Pre-Search VOC vs. Live Telemetry Halting (LTH)")
     ax1.set_ylim(min(-0.1, min(vals) - 0.08), max(vals) + 0.12)
     for b, v in zip(bars, vals):
         ax1.text(b.get_x() + b.get_width() / 2, max(v, 0.0) + 0.02, f"{v:+.3f}",
@@ -86,11 +107,11 @@ def plot_fig1_halting_diagnosis(v1_train: dict, m_summary: dict, out_dir: Path):
     replay_curves = m_summary["modes"]["latent"]["val_replay"]
     full_exps = m_summary["modes"]["latent"]["full_exps"]
     styles = [
-        ("meeseeks", "Mr. Meeseeks (live regret)", "#e15759", "o-", 2.2),
-        ("meeseeks_agree", "Meeseeks (agreement head)", "#d37295", "s--", 1.6),
+        ("meeseeks", "LTH-Regret (live telemetry, ours)", "#e15759", "o-", 2.2),
+        ("meeseeks_agree", "LTH-Agree (move-stability head)", "#d37295", "s--", 1.6),
         ("share", "Visit-share stopping", "#4e79a7", "^-", 1.6),
         ("unreach", "Unreachable-leader early stop", "#59a14f", "d-", 1.6),
-        ("meeseeks_pre", "Meeseeks (t=0 pre-search only)", "#f28e2b", "v--", 1.6),
+        ("meeseeks_pre", "Pre-search regret gate (t=0 only)", "#f28e2b", "v--", 1.6),
         ("confgate", "Pre-search confidence gate", "#9c755f", "P:", 1.5),
         ("fixed", "Fixed simulation budget", "#76b7b2", "X:", 1.5),
     ]
@@ -126,26 +147,26 @@ def plot_fig2_pareto_compute(eval_data: dict, out_dir: Path):
         if len(meeseeks_pts) >= 2:
             ax.plot([r["expansions_per_move"] for r in meeseeks_pts],
                     [r["score"] for r in meeseeks_pts],
-                    "o-", color="#e15759", linewidth=2.2, markersize=6.5, label="Citadel + Meeseeks (live)")
+                    "o-", color="#e15759", linewidth=2.2, markersize=6.5, label="BASIL-3 + LTH (live anytime)")
 
         oracle_m_pts = [r for r in sub if r["agent"].startswith("oracle@meeseeks:") or r["agent"] in ("morty", "oracle")]
         oracle_m_pts.sort(key=lambda r: r["expansions_per_move"])
         if len(oracle_m_pts) > 2:
             ax.plot([r["expansions_per_move"] for r in oracle_m_pts],
                     [r["score"] for r in oracle_m_pts],
-                    "s--", color="#2b5c8f", linewidth=1.8, markersize=5.5, label="Oracle + Meeseeks (real rules)")
+                    "s--", color="#2b5c8f", linewidth=1.8, markersize=5.5, label="OracleSim + LTH (real rules)")
 
         # Plot individual baseline gates
         markers = [
-            ("morty", "Fast policy (Morty, 0 sims)", "#222222", "*", 110),
-            ("citadel@always", "Citadel (always full search)", "#b07aa1", "D", 65),
-            ("citadel@voc:0.25", "Citadel @ pre-search VOC (25%)", "#f28e2b", "v", 65),
-            ("citadel@disagreement:0.25", "Citadel @ disagreement (25%)", "#59a14f", "^", 65),
-            ("citadel@confidence:0.25", "Citadel @ confidence (25%)", "#9c755f", "P", 65),
-            ("citadel@random:0.25", "Citadel @ random gate (25%)", "#8c8c8c", "X", 65),
-            ("citadel@share:0.25", "Citadel @ visit-share (25%)", "#4e79a7", "p", 65),
-            ("citadel@unreach:0.25", "Citadel @ unreachable-stop (25%)", "#76b7b2", "h", 65),
-            ("oracle", "Oracle (full real-rule search)", "#1f77b4", "s", 70),
+            ("morty", "FastPolicy (0 sims)", "#222222", "*", 110),
+            ("citadel@always", "BASIL-3 (always full search)", "#b07aa1", "D", 65),
+            ("citadel@voc:0.25", "BASIL-3 @ pre-search VOC (25%)", "#f28e2b", "v", 65),
+            ("citadel@disagreement:0.25", "BASIL-3 @ disagreement (25%)", "#59a14f", "^", 65),
+            ("citadel@confidence:0.25", "BASIL-3 @ confidence (25%)", "#9c755f", "P", 65),
+            ("citadel@random:0.25", "BASIL-3 @ random gate (25%)", "#8c8c8c", "X", 65),
+            ("citadel@share:0.25", "BASIL-3 @ visit-share (25%)", "#4e79a7", "p", 65),
+            ("citadel@unreach:0.25", "BASIL-3 @ unreachable-stop (25%)", "#76b7b2", "h", 65),
+            ("oracle", "OracleSim (full real-rule search)", "#1f77b4", "s", 70),
         ]
         for ag, lbl, col, mk, sz in markers:
             if ag in by_agent:
@@ -177,15 +198,15 @@ def plot_fig3_cronenberg(cron_data: dict, out_dir: Path):
     ax1_r.plot(xs, brier, "s--", color="#e15759", linewidth=1.8, markersize=5.5, label="Rule marginal Brier error")
     ax1_r.set_ylabel("Posterior rule Brier error", color="#e15759")
     ax1_r.tick_params(axis="y", labelcolor="#e15759")
-    ax1.set_title("(a) In-Context Rule Induction (Central Finite Curve)")
+    ax1.set_title("(a) In-Context Rule Induction (Bayesian Filtration)")
 
     # Panel B: Score and compute across episodes by agent mode
     mode_styles = [
-        ("full_info_citadel", "Full-Info Citadel (rules visible ceiling)", "#1f77b4", "s--"),
-        ("cfc_citadel", "CFC + Multiverse Search (full sims)", "#59a14f", "o-"),
-        ("cfc_meeseeks", "CFC + Multiverse + Meeseeks (adaptive)", "#e15759", "^-"),
-        ("cfc_morty", "CFC + Fast Policy (Morty, 0 sims)", "#f28e2b", "d-"),
-        ("blind_morty", "Blind Fast Policy (no rule induction)", "#8c8c8c", "x:"),
+        ("full_info_citadel", "Full-Info BASIL-3 (visible rules ceiling)", "#1f77b4", "s--"),
+        ("cfc_citadel", "BHF + Posterior-Sampled Search (full)", "#59a14f", "o-"),
+        ("cfc_meeseeks", "BHF + Posterior-Sampled + LTH (adaptive)", "#e15759", "^-"),
+        ("cfc_morty", "BHF + FastPolicy (0 sims)", "#f28e2b", "d-"),
+        ("blind_morty", "Blind FastPolicy (no rule induction)", "#8c8c8c", "x:"),
     ]
     for m, lbl, col, fmt in mode_styles:
         if m in cron_data["modes"]:
@@ -207,10 +228,10 @@ def plot_fig4_architecture_comparison(v1_hist: list[dict], v2_hist: list[dict], 
     it1 = [h["iteration"] for h in v1_hist]
     it2 = [h["iteration"] for h in v2_hist]
 
-    ax1.plot(it1, [h["policy"] for h in v1_hist], "--", color="#8c8c8c", linewidth=1.8, label="Baseline Citadel: policy CE")
-    ax1.plot(it2, [h["policy"] for h in v2_hist], "-", color="#2b5c8f", linewidth=2.2, label="Toroidal-Equivariant Citadel: policy CE")
-    ax1.plot(it1, [h["win"] for h in v1_hist], ":", color="#b07aa1", linewidth=1.8, label="Baseline Citadel: win BCE")
-    ax1.plot(it2, [h["win"] for h in v2_hist], "-", color="#e15759", linewidth=2.2, label="Toroidal-Equivariant Citadel: win BCE")
+    ax1.plot(it1, [h["policy"] for h in v1_hist], "--", color="#8c8c8c", linewidth=1.8, label="Baseline World Model: policy CE")
+    ax1.plot(it2, [h["policy"] for h in v2_hist], "-", color="#2b5c8f", linewidth=2.2, label="Toroidal-Equivariant BASIL-3: policy CE")
+    ax1.plot(it1, [h["win"] for h in v1_hist], ":", color="#b07aa1", linewidth=1.8, label="Baseline World Model: win BCE")
+    ax1.plot(it2, [h["win"] for h in v2_hist], "-", color="#e15759", linewidth=2.2, label="Toroidal-Equivariant BASIL-3: win BCE")
     ax1.set_xlabel("Training iteration")
     ax1.set_ylabel("Training loss")
     ax1.set_title("(a) Policy & World-Model Win Loss Convergence")
@@ -224,10 +245,10 @@ def plot_fig4_architecture_comparison(v1_hist: list[dict], v2_hist: list[dict], 
             out.append(float(np.mean(arr[lo:i + 1])))
         return out
 
-    ax2.plot(it1, _smooth([h["vs_random"] for h in v1_hist]), "--", color="#8c8c8c", linewidth=1.7, label="Baseline Morty vs. random")
-    ax2.plot(it2, _smooth([h["vs_random"] for h in v2_hist]), "-", color="#2b5c8f", linewidth=2.2, label="Toroidal-Equivariant Morty vs. random")
-    ax2.plot(it1, _smooth([h["vs_greedy"] for h in v1_hist]), ":", color="#f28e2b", linewidth=1.8, label="Baseline Morty vs. greedy")
-    ax2.plot(it2, _smooth([h["vs_greedy"] for h in v2_hist]), "-", color="#e15759", linewidth=2.2, label="Toroidal-Equivariant Morty vs. greedy")
+    ax2.plot(it1, _smooth([h["vs_random"] for h in v1_hist]), "--", color="#8c8c8c", linewidth=1.7, label="Baseline FastPolicy vs. random")
+    ax2.plot(it2, _smooth([h["vs_random"] for h in v2_hist]), "-", color="#2b5c8f", linewidth=2.2, label="Toroidal-Equivariant FastPolicy vs. random")
+    ax2.plot(it1, _smooth([h["vs_greedy"] for h in v1_hist]), ":", color="#f28e2b", linewidth=1.8, label="Baseline FastPolicy vs. greedy")
+    ax2.plot(it2, _smooth([h["vs_greedy"] for h in v2_hist]), "-", color="#e15759", linewidth=2.2, label="Toroidal-Equivariant FastPolicy vs. greedy")
     ax2.set_xlabel("Training iteration")
     ax2.set_ylabel("Fast-policy score (3-iter moving avg)")
     ax2.set_ylim(0.0, 1.05)
@@ -292,10 +313,9 @@ def aggregate_cronenberg(seed_dirs: list[Path], split: str = "val") -> dict:
     return {"episodes": eps, "n_seeds": len(js), "posterior_curve": post, "modes": modes}
 
 
-def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_tex: Path):
-    """Write `paper/tables_generated.tex` with Tables 1, 2, and 3."""
+def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_tex: Path, test_eval_data: dict | None = None, test_cron_data: dict | None = None):
+    """Write `paper/tables_generated.tex` with scientific terminology for Tables 1, 2, 3 (and 4 if test split is present)."""
     lat_s = m_summary["modes"]["latent"]["stats"]
-    sim_s = m_summary["modes"]["sim"]["stats"]
     rep = m_summary["modes"]["latent"]["val_replay"]
 
     lines = [
@@ -304,7 +324,7 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "\\centering",
         "\\small",
         "\\caption{\\textbf{Halting calibration and stopping-regret accuracy} across seeds on held-out rule families. "
-        "Mr.\\ Meeseeks achieves strong positive correlation with true stopping regret once in-search telemetry ($t>0$) is observed, "
+        "Live Telemetry Halting (LTH) achieves strong positive correlation with true stopping regret once in-search telemetry ($t>0$) is observed, "
         "yielding lower stopping regret and higher final-move agreement at matched $25\\%$ compute budget.}",
         "\\label{tab:halting}",
         "\\begin{tabular}{lcccc}",
@@ -313,8 +333,8 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "\\midrule",
     ]
     rule_names = [
-        ("meeseeks", "\\textbf{Mr.\\ Meeseeks (live regret, ours)}"),
-        ("meeseeks_agree", "Mr.\\ Meeseeks (agreement head)"),
+        ("meeseeks", "\\textbf{Live Telemetry Halting (LTH-Regret, ours)}"),
+        ("meeseeks_agree", "\\textbf{Live Telemetry Halting (LTH-Agree, ours)}"),
         ("share", "Visit-share threshold ($s_{\\text{top}} \\ge \\tau$)"),
         ("unreach", "Unreachable-leader early stop"),
         ("meeseeks_pre", "Pre-search regret gate ($t=0$ only)"),
@@ -337,22 +357,23 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{\\textbf{Online game-play performance on unseen rule families} (paired evaluation across both seats, "
-        "reporting mean score $\\text{win} + \\tfrac{1}{2}\\text{draw}$, $95\\%$ bootstrap CI over universes, paired $\\Delta$ vs.\\ fast policy \\texttt{morty}, and model expansions per move).}",
+        "\\caption{\\textbf{Online game-play performance on unseen validation rule families} (paired evaluation across both seats, "
+        "reporting mean score $\\text{win} + \\tfrac{1}{2}\\text{draw}$, $95\\%$ bootstrap CI over universes, paired $\\Delta$ vs.\\ \\texttt{FastPolicy}, and model expansions per move).}",
         "\\label{tab:online}",
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Agent & Opponent & Score & $95\\%$ CI & $\\Delta$ vs.\\ \\texttt{morty} & Exps/Move \\\\",
+        "Agent & Opponent & Score & $95\\%$ CI & $\\Delta$ vs.\\ \\texttt{FastPolicy} & Exps/Move \\\\",
         "\\midrule",
     ]
     for r in eval_data["results"]:
-        ag = r["agent"].replace("_", "\\_")
+        ag = SCIENTIFIC_AGENT_NAMES.get(r["agent"], r["agent"].replace("_", "\\_"))
         opp = r["opponent"]
         sc = r["score"]
         ci = r["score_ci95"]
         delta_key = [k for k in r if k.startswith("delta_vs_")]
-        d_str = f"{r[delta_key[0]]:+.3f}" if delta_key and r[delta_key[0]] is not None else "---"
-        lines.append(f"\\texttt{{{ag}}} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & ${d_str}$ & ${r['expansions_per_move']:.1f}$ \\\\")
+        d_val = r[delta_key[0]] if delta_key else r.get("delta")
+        d_str = f"{d_val:+.3f}" if d_val is not None else "---"
+        lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & ${d_str}$ & ${r['expansions_per_move']:.1f}$ \\\\")
     lines += [
         "\\bottomrule",
         "\\end{tabular}",
@@ -361,22 +382,22 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{\\textbf{Cronenberg Mode (hidden rules) multi-episode adaptation} across unseen universes. "
-        f"The Central Finite Curve (CFC) reduces rule posterior entropy from ${cron_data['posterior_curve']['entropy_bits_start'][0]:.2f}$ bits "
+        "\\caption{\\textbf{Hidden-Rule Regime multi-episode adaptation} across unseen universes. "
+        f"Exact Bayesian Hypothesis Filtration (BHF) reduces rule posterior entropy from ${cron_data['posterior_curve']['entropy_bits_start'][0]:.2f}$ bits "
         f"(${cron_data['posterior_curve']['alive_start'][0]:.1f}$ candidate universes on average) at the start of Episode 1 "
         f"to ${cron_data['posterior_curve']['entropy_bits_end'][-1]:.2f}$ bits by the end of Episode {cron_data['episodes']}.}}",
         "\\label{tab:cronenberg}",
         "\\begin{tabular}{lcccc}",
         "\\toprule",
-        "Cronenberg Agent Mode & Ep.\\ 1--2 Score & Ep.\\ 5--6 Score & Mean Match Score & Mean Exps/Move \\\\",
+        "Hidden-Rule Agent Architecture & Ep.\\ 1--2 Score & Ep.\\ 5--6 Score & Mean Match Score & Mean Exps/Move \\\\",
         "\\midrule",
     ]
     c_labels = [
-        ("blind_morty", "Blind Fast Policy (no rule induction)"),
-        ("cfc_morty", "CFC + Fast Policy (\\texttt{morty}, $0$ sims)"),
-        ("cfc_meeseeks", "\\textbf{CFC + Multiverse + Mr.\\ Meeseeks (adaptive)}"),
-        ("cfc_citadel", "\\textbf{CFC + Multiverse Thompson Search (full)}"),
-        ("full_info_citadel", "Full-Info Citadel (visible rules ceiling)"),
+        ("blind_morty", "Blind FastPolicy (no rule induction)"),
+        ("cfc_morty", "BHF + FastPolicy ($0$ sims)"),
+        ("cfc_meeseeks", "\\textbf{BHF + Posterior-Sampled Search + LTH (adaptive)}"),
+        ("cfc_citadel", "\\textbf{BHF + Posterior-Sampled Search (full)}"),
+        ("full_info_citadel", "Full-Info BASIL-3 (visible rules ceiling)"),
     ]
     for mk, mlabel in c_labels:
         if mk not in cron_data["modes"]:
@@ -388,6 +409,33 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "\\end{tabular}",
         "\\end{table}",
     ]
+    if test_eval_data is not None:
+        lines += [
+            "",
+            "\\begin{table}[t]",
+            "\\centering",
+            "\\small",
+            "\\caption{\\textbf{One-shot preregistered test-split evaluation} on held-out rule families (cryptographically locked prior to test evaluation, 3 seeds $\\times$ both seats).}",
+            "\\label{tab:test_online}",
+            "\\begin{tabular}{llcccc}",
+            "\\toprule",
+            "Agent & Opponent & Test Score & $95\\%$ CI & $\\Delta$ vs.\\ \\texttt{FastPolicy} & Exps/Move \\\\",
+            "\\midrule",
+        ]
+        for r in test_eval_data["results"]:
+            ag = SCIENTIFIC_AGENT_NAMES.get(r["agent"], r["agent"].replace("_", "\\_"))
+            opp = r["opponent"]
+            sc = r["score"]
+            ci = r["score_ci95"]
+            delta_key = [k for k in r if k.startswith("delta_vs_")]
+            d_val = r[delta_key[0]] if delta_key else r.get("delta")
+            d_str = f"{d_val:+.3f}" if d_val is not None else "---"
+            lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & ${d_str}$ & ${r['expansions_per_move']:.1f}$ \\\\")
+        lines += [
+            "\\bottomrule",
+            "\\end{tabular}",
+            "\\end{table}",
+        ]
     out_tex.parent.mkdir(parents=True, exist_ok=True)
     out_tex.write_text("\n".join(lines) + "\n")
 
@@ -421,15 +469,21 @@ def main(argv=None):
         v2_hist.append(row)
 
     m_summary = aggregate_meeseeks_summaries(seed_dirs)
-    eval_data = json.loads(Path(args.eval_json).read_text())
-    cron_data = aggregate_cronenberg(seed_dirs, split=args.split)
+    eval_path = Path(args.eval_json)
+    val_eval_path = eval_path.parent / "val_summary.json"
+    test_eval_path = eval_path.parent / "test_summary.json"
+    eval_data = json.loads(val_eval_path.read_text()) if val_eval_path.exists() else json.loads(eval_path.read_text())
+    cron_split = "val" if (seed_dirs[0] / "cronenberg_val.json").exists() else args.split
+    cron_data = aggregate_cronenberg(seed_dirs, split=cron_split)
+    test_eval_data = json.loads(test_eval_path.read_text()) if test_eval_path.exists() else None
+    test_cron_data = aggregate_cronenberg(seed_dirs, split="test") if (seed_dirs[0] / "cronenberg_test.json").exists() else None
 
     plot_fig1_halting_diagnosis(v1_train, m_summary, out_dir)
     plot_fig2_pareto_compute(eval_data, out_dir)
     plot_fig3_cronenberg(cron_data, out_dir)
     if v1_train.get("history"):
         plot_fig4_architecture_comparison(v1_train["history"][:len(v2_hist)], v2_hist, out_dir)
-    write_latex_tables(m_summary, eval_data, cron_data, Path(args.out_tex))
+    write_latex_tables(m_summary, eval_data, cron_data, Path(args.out_tex), test_eval_data, test_cron_data)
     print(f"Generated figures in {out_dir} and LaTeX tables in {args.out_tex}")
 
 
