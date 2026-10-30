@@ -4,31 +4,34 @@
 \small
 \caption{\textbf{Halting calibration and stopping-regret accuracy} across seeds on held-out rule families. Live Telemetry Halting (LTH) achieves strong positive correlation with true stopping regret once in-search telemetry ($t>0$) is observed, yielding lower stopping regret and higher final-move agreement at matched $25\%$ compute budget.}
 \label{tab:halting}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
 Halting Policy (@ $25\%$ Budget) & Regret Corr.\ $r$ ($t>0$) & Mean Exps/Move & Stopping Regret $\downarrow$ & Final-Move Agreement $\uparrow$ \\
 \midrule
 \textbf{Live Telemetry Halting (LTH-Regret, ours)} & $+0.564$ & $8.9$ & $0.0911$ & $74.7\%$ \\
-\textbf{Live Telemetry Halting (LTH-Agree, ours)} & $---$ & $9.0$ & $0.0797$ & $76.3\%$ \\
-Visit-share threshold ($s_{\text{top}} \ge \tau$) & $---$ & $8.9$ & $0.0911$ & $73.3\%$ \\
-Unreachable-leader early stop & $---$ & $9.1$ & $0.0815$ & $75.3\%$ \\
+\textbf{Live Telemetry Halting (LTH-Agree, ours)} & --- & $9.0$ & $0.0797$ & $76.3\%$ \\
+Visit-share threshold ($s_{\text{top}} \ge \tau$) & --- & $8.9$ & $0.0911$ & $73.3\%$ \\
+Unreachable-leader early stop & --- & $9.1$ & $0.0815$ & $75.3\%$ \\
 Pre-search regret gate ($t=0$ only) & $+0.253$ & $9.1$ & $0.1288$ & $70.3\%$ \\
-Pre-search policy-entropy gate & $---$ & $9.0$ & $0.1332$ & $70.3\%$ \\
-Fixed simulation budget & $---$ & $10.3$ & $0.0815$ & $75.3\%$ \\
+Pre-search policy-entropy gate & --- & $9.0$ & $0.1332$ & $70.3\%$ \\
+Fixed simulation budget & --- & $10.3$ & $0.0815$ & $75.3\%$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{table}[t]
 \centering
-\small
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
 \caption{\textbf{Online game-play performance on unseen validation rule families} (paired evaluation across both seats, reporting mean score $\text{win} + \tfrac{1}{2}\text{draw}$, $95\%$ bootstrap CI over universes, paired $\Delta$ vs.\ \texttt{FastPolicy}, and model expansions per move).}
 \label{tab:online}
 \begin{tabular}{llcccc}
 \toprule
 Agent & Opponent & Score & $95\%$ CI & $\Delta$ vs.\ \texttt{FastPolicy} & Exps/Move \\
 \midrule
-FastPolicy ($0$ sims) & \texttt{greedy} & $0.549$ & $[0.347, 0.750]$ & $---$ & $0.0$ \\
+FastPolicy ($0$ sims) & \texttt{greedy} & $0.549$ & $[0.347, 0.750]$ & --- & $0.0$ \\
 BASIL-3 (Full Search) & \texttt{greedy} & $0.958$ & $[0.875, 1.000]$ & $+0.410$ & $30.2$ \\
 BASIL-3 + LTH-Regret ($10\%$) & \texttt{greedy} & $0.639$ & $[0.438, 0.833]$ & $+0.090$ & $2.4$ \\
 BASIL-3 + LTH-Regret ($25\%$) & \texttt{greedy} & $0.743$ & $[0.597, 0.875]$ & $+0.194$ & $8.6$ \\
@@ -45,7 +48,7 @@ OracleSim (Full Search) & \texttt{greedy} & $0.924$ & $[0.826, 1.000]$ & $+0.375
 OracleSim + LTH-Regret ($10\%$) & \texttt{greedy} & $0.639$ & $[0.458, 0.826]$ & $+0.090$ & $3.5$ \\
 OracleSim + LTH-Regret ($25\%$) & \texttt{greedy} & $0.764$ & $[0.618, 0.889]$ & $+0.215$ & $8.5$ \\
 OracleSim + LTH-Regret ($50\%$) & \texttt{greedy} & $0.889$ & $[0.778, 0.979]$ & $+0.340$ & $15.2$ \\
-FastPolicy ($0$ sims) & \texttt{uct-100} & $0.424$ & $[0.208, 0.639]$ & $---$ & $0.0$ \\
+FastPolicy ($0$ sims) & \texttt{uct-100} & $0.424$ & $[0.208, 0.639]$ & --- & $0.0$ \\
 BASIL-3 (Full Search) & \texttt{uct-100} & $0.771$ & $[0.639, 0.889]$ & $+0.347$ & $33.9$ \\
 BASIL-3 + LTH-Regret ($10\%$) & \texttt{uct-100} & $0.500$ & $[0.291, 0.722]$ & $+0.076$ & $2.4$ \\
 BASIL-3 + LTH-Regret ($25\%$) & \texttt{uct-100} & $0.646$ & $[0.417, 0.854]$ & $+0.222$ & $8.2$ \\
@@ -71,6 +74,7 @@ OracleSim + LTH-Regret ($50\%$) & \texttt{uct-100} & $0.618$ & $[0.430, 0.806]$ 
 \small
 \caption{\textbf{Hidden-Rule Regime multi-episode adaptation} across unseen universes. Exact Bayesian Hypothesis Filtration (BHF) reduces rule posterior entropy from $6.49$ bits ($90.0$ candidate universes on average) at the start of Episode 1 to $1.69$ bits by the end of Episode 6.}
 \label{tab:cronenberg}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
 Hidden-Rule Agent Architecture & Ep.\ 1--2 Score & Ep.\ 5--6 Score & Mean Match Score & Mean Exps/Move \\
@@ -81,19 +85,21 @@ BHF + FastPolicy ($0$ sims) & $0.646$ & $0.583$ & $0.604$ & $0.0$ \\
 \textbf{BHF + Posterior-Sampled Search (full)} & $0.667$ & $0.757$ & $0.715$ & $38.3$ \\
 Full-Info BASIL-3 (visible rules ceiling) & $0.917$ & $0.945$ & $0.928$ & $30.8$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{table}[t]
 \centering
-\small
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
 \caption{\textbf{One-shot preregistered test-split evaluation} on held-out rule families (cryptographically locked prior to test evaluation, 3 seeds $\times$ both seats).}
 \label{tab:test_online}
 \begin{tabular}{llcccc}
 \toprule
 Agent & Opponent & Test Score & $95\%$ CI & $\Delta$ vs.\ \texttt{FastPolicy} & Exps/Move \\
 \midrule
-FastPolicy ($0$ sims) & \texttt{greedy} & $0.597$ & $[0.417, 0.764]$ & $---$ & $0.0$ \\
+FastPolicy ($0$ sims) & \texttt{greedy} & $0.597$ & $[0.417, 0.764]$ & --- & $0.0$ \\
 BASIL-3 (Full Search) & \texttt{greedy} & $0.938$ & $[0.833, 1.000]$ & $+0.340$ & $34.1$ \\
 BASIL-3 + LTH-Regret ($10\%$) & \texttt{greedy} & $0.646$ & $[0.451, 0.833]$ & $+0.049$ & $3.8$ \\
 BASIL-3 + LTH-Regret ($25\%$) & \texttt{greedy} & $0.750$ & $[0.597, 0.889]$ & $+0.153$ & $10.8$ \\
@@ -110,7 +116,7 @@ OracleSim (Full Search) & \texttt{greedy} & $0.903$ & $[0.784, 1.000]$ & $+0.306
 OracleSim + LTH-Regret ($10\%$) & \texttt{greedy} & $0.604$ & $[0.403, 0.792]$ & $+0.007$ & $4.0$ \\
 OracleSim + LTH-Regret ($25\%$) & \texttt{greedy} & $0.771$ & $[0.583, 0.931]$ & $+0.174$ & $9.6$ \\
 OracleSim + LTH-Regret ($50\%$) & \texttt{greedy} & $0.847$ & $[0.708, 0.958]$ & $+0.250$ & $18.1$ \\
-FastPolicy ($0$ sims) & \texttt{uct-100} & $0.486$ & $[0.292, 0.667]$ & $---$ & $0.0$ \\
+FastPolicy ($0$ sims) & \texttt{uct-100} & $0.486$ & $[0.292, 0.667]$ & --- & $0.0$ \\
 BASIL-3 (Full Search) & \texttt{uct-100} & $0.722$ & $[0.542, 0.875]$ & $+0.236$ & $35.8$ \\
 BASIL-3 + LTH-Regret ($10\%$) & \texttt{uct-100} & $0.542$ & $[0.375, 0.708]$ & $+0.056$ & $3.7$ \\
 BASIL-3 + LTH-Regret ($25\%$) & \texttt{uct-100} & $0.639$ & $[0.458, 0.819]$ & $+0.153$ & $10.0$ \\

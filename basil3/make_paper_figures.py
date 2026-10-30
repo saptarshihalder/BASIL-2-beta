@@ -327,6 +327,7 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         "Live Telemetry Halting (LTH) achieves strong positive correlation with true stopping regret once in-search telemetry ($t>0$) is observed, "
         "yielding lower stopping regret and higher final-move agreement at matched $25\\%$ compute budget.}",
         "\\label{tab:halting}",
+        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{lcccc}",
         "\\toprule",
         "Halting Policy (@ $25\\%$ Budget) & Regret Corr.\\ $r$ ($t>0$) & Mean Exps/Move & Stopping Regret $\\downarrow$ & Final-Move Agreement $\\uparrow$ \\\\",
@@ -345,18 +346,20 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         if rk not in rep or "0.25" not in rep[rk]:
             continue
         p = rep[rk]["0.25"]
-        corr_str = f"{lat_s['heldout_regret_corr_live']:+.3f}" if rk == "meeseeks" else (
-            f"{lat_s['heldout_regret_corr_t0']:+.3f}" if rk == "meeseeks_pre" else "---"
+        corr_str = f"${lat_s['heldout_regret_corr_live']:+.3f}$" if rk == "meeseeks" else (
+            f"${lat_s['heldout_regret_corr_t0']:+.3f}$" if rk == "meeseeks_pre" else "---"
         )
-        lines.append(f"{rlabel} & ${corr_str}$ & ${p['exps']:.1f}$ & ${p['regret']:.4f}$ & ${100*p['agree']:.1f}\\%$ \\\\")
+        lines.append(f"{rlabel} & {corr_str} & ${p['exps']:.1f}$ & ${p['regret']:.4f}$ & ${100*p['agree']:.1f}\\%$ \\\\")
     lines += [
         "\\bottomrule",
-        "\\end{tabular}",
+        "\\end{tabular}%",
+        "}",
         "\\end{table}",
         "",
         "\\begin{table}[t]",
         "\\centering",
-        "\\small",
+        "\\footnotesize",
+        "\\setlength{\\tabcolsep}{4.5pt}",
         "\\caption{\\textbf{Online game-play performance on unseen validation rule families} (paired evaluation across both seats, "
         "reporting mean score $\\text{win} + \\tfrac{1}{2}\\text{draw}$, $95\\%$ bootstrap CI over universes, paired $\\Delta$ vs.\\ \\texttt{FastPolicy}, and model expansions per move).}",
         "\\label{tab:online}",
@@ -372,8 +375,8 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         ci = r["score_ci95"]
         delta_key = [k for k in r if k.startswith("delta_vs_")]
         d_val = r[delta_key[0]] if delta_key else r.get("delta")
-        d_str = f"{d_val:+.3f}" if d_val is not None else "---"
-        lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & ${d_str}$ & ${r['expansions_per_move']:.1f}$ \\\\")
+        d_str = f"${d_val:+.3f}$" if d_val is not None else "---"
+        lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & {d_str} & ${r['expansions_per_move']:.1f}$ \\\\")
     lines += [
         "\\bottomrule",
         "\\end{tabular}",
@@ -387,6 +390,7 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         f"(${cron_data['posterior_curve']['alive_start'][0]:.1f}$ candidate universes on average) at the start of Episode 1 "
         f"to ${cron_data['posterior_curve']['entropy_bits_end'][-1]:.2f}$ bits by the end of Episode {cron_data['episodes']}.}}",
         "\\label{tab:cronenberg}",
+        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{lcccc}",
         "\\toprule",
         "Hidden-Rule Agent Architecture & Ep.\\ 1--2 Score & Ep.\\ 5--6 Score & Mean Match Score & Mean Exps/Move \\\\",
@@ -406,7 +410,8 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
         lines.append(f"{mlabel} & ${md['early_score_ep1_2']:.3f}$ & ${md['late_score_ep5_6']:.3f}$ & ${md['mean_score']:.3f}$ & ${md['mean_expansions']:.1f}$ \\\\")
     lines += [
         "\\bottomrule",
-        "\\end{tabular}",
+        "\\end{tabular}%",
+        "}",
         "\\end{table}",
     ]
     if test_eval_data is not None:
@@ -414,7 +419,8 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
             "",
             "\\begin{table}[t]",
             "\\centering",
-            "\\small",
+            "\\footnotesize",
+            "\\setlength{\\tabcolsep}{4.5pt}",
             "\\caption{\\textbf{One-shot preregistered test-split evaluation} on held-out rule families (cryptographically locked prior to test evaluation, 3 seeds $\\times$ both seats).}",
             "\\label{tab:test_online}",
             "\\begin{tabular}{llcccc}",
@@ -429,8 +435,8 @@ def write_latex_tables(m_summary: dict, eval_data: dict, cron_data: dict, out_te
             ci = r["score_ci95"]
             delta_key = [k for k in r if k.startswith("delta_vs_")]
             d_val = r[delta_key[0]] if delta_key else r.get("delta")
-            d_str = f"{d_val:+.3f}" if d_val is not None else "---"
-            lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & ${d_str}$ & ${r['expansions_per_move']:.1f}$ \\\\")
+            d_str = f"${d_val:+.3f}$" if d_val is not None else "---"
+            lines.append(f"{ag} & \\texttt{{{opp}}} & ${sc:.3f}$ & $[{ci[0]:.3f}, {ci[1]:.3f}]$ & {d_str} & ${r['expansions_per_move']:.1f}$ \\\\")
         lines += [
             "\\bottomrule",
             "\\end{tabular}",

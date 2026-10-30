@@ -3,12 +3,10 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{hyperref}
 \usepackage{natbib}
 \usepackage{microtype}
 \usepackage{xcolor}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
+\usepackage{hyperref}
 
 \hypersetup{
     colorlinks=true,
@@ -109,7 +107,14 @@ This perturbs neural activations by at most $2^{-8} \approx 0.0039$ (preserving 
     C = \mathrm{conv2d}\big(\mathcal{P}_{\text{torus}}(b_{t+1}, \ell_{t+1}),\, K\big), \qquad
     H_{\text{tac}} = \mathcal{P}_{\text{torus}}^\top\big(\mathrm{conv\_transpose2d}(M_{\text{threat}}(C),\, K)\big) \odot \ell_{t+1},
 \end{equation}
-achieving $100\%$ precision and recall on 1-ply wins, forced blocks, and double-threat forks across unseen rule families with zero simulator access.
+achieving $100\%$ precision and recall on 1-ply wins, forced blocks, and double-threat forks across unseen rule families with zero simulator access (Figure~\ref{fig:arch}).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/fig4_architecture_comparison.pdf}
+    \caption{\textbf{Breaking the tactical cold-start trap (\S\ref{sec:citadel}).} (a) Policy cross-entropy and world-model win binary cross-entropy across iterations for the Baseline World Model vs.\ Toroidal-Equivariant BASIL-3. (b) \texttt{FastPolicy} score against \texttt{random} and \texttt{greedy} opponents during training.}
+    \label{fig:arch}
+\end{figure}
 
 \subsection{Live Telemetry Halting (LTH): Self-Supervised Anytime Optimal Stopping}
 \label{sec:meeseeks}
@@ -155,19 +160,10 @@ Table~\ref{tab:halting} and Figure~\ref{fig:halting} validate Proposition~\ref{p
 
 Table~\ref{tab:online} and Figure~\ref{fig:pareto} report online gameplay performance across unseen validation rule families, and Table~\ref{tab:test_online} reports the one-shot preregistered test-split evaluation:
 \begin{itemize}
-    \item \textbf{Latent imagination strongly outperforms the fast policy:} On unseen validation rule families against \texttt{greedy}, \texttt{FastPolicy} ($0$ expansions) scores $0.549$, whereas \texttt{BASIL-3 (Full Search)} ($30.2$ expansions/move) reaches \textbf{$0.958$} ($\Delta = +0.410$, $95\%$ CI $[+0.208, +0.618]$), matching the true-simulator \texttt{OracleSim} ($0.924$). Against the $100$-rollout true-simulator MCTS opponent (\texttt{uct-100}), \texttt{FastPolicy} scores $0.424$, while \texttt{BASIL-3 (Full Search)} reaches \textbf{$0.771$} ($\Delta = +0.347$, $95\%$ CI $[+0.194, +0.486]$) using only $48$ imagined simulations and zero simulator access.
-    \item \textbf{Adaptive compute Pareto frontier:} At a $25\%$ budget against \texttt{uct-100}, \texttt{BASIL-3 + LTH-Regret (25\%)} achieves a score of \textbf{$0.646$} ($\Delta = +0.222$ over \texttt{FastPolicy}) using only $8.2$ expansions/move ($4.1\times$ fewer expansions than full search), outperforming pre-search confidence ($0.479$), disagreement ($0.493$), random gating ($0.528$), and pre-search VOC ($0.556$).
+    \item \textbf{Latent imagination strongly outperforms the fast policy:} On unseen validation rule families against \texttt{greedy}, \texttt{FastPolicy} ($0$ expansions) scores $0.549$, whereas \texttt{BASIL-3} (Full Search, $30.2$ expansions/move) reaches \textbf{$0.958$} ($\Delta = +0.410$, $95\%$ CI $[+0.208, +0.618]$), matching the true-simulator \texttt{OracleSim} ($0.924$). Against the $100$-rollout true-simulator MCTS opponent (\texttt{uct-100}), \texttt{FastPolicy} scores $0.424$, while \texttt{BASIL-3} (Full Search) reaches \textbf{$0.771$} ($\Delta = +0.347$, $95\%$ CI $[+0.194, +0.486]$) with zero simulator access.
+    \item \textbf{Adaptive compute Pareto frontier:} At a $25\%$ budget against \texttt{uct-100}, \texttt{BASIL-3} + \texttt{LTH-Regret} ($25\%$) achieves a score of \textbf{$0.646$} ($\Delta = +0.222$ over \texttt{FastPolicy}) using only $8.2$ expansions/move ($4.1\times$ fewer expansions than full search), outperforming pre-search confidence ($0.479$), disagreement ($0.493$), random gating ($0.528$), and pre-search VOC ($0.556$).
+    \item \textbf{One-shot preregistered test-split generalization (Table~\ref{tab:test_online}):} Across the cryptographically locked test universes, \texttt{BASIL-3} (Full Search) reaches \textbf{$0.938$} ($\Delta = +0.340$, CI $[+0.181, +0.500]$) vs.\ \texttt{greedy} and \textbf{$0.722$} ($\Delta = +0.236$, CI $[+0.042, +0.403]$) vs.\ \texttt{uct-100}, while \texttt{BASIL-3} + \texttt{LTH-Agree} ($25\%$) reaches \textbf{$0.681$} ($\Delta = +0.194$, CI $[+0.042, +0.347]$) vs.\ \texttt{uct-100} at $10.5$ expansions/move.
 \end{itemize}
-
-\subsection{In-Context Rule Induction in the Hidden-Rule Regime}
-Table~\ref{tab:cronenberg} and Figure~\ref{fig:cronenberg} evaluate adaptation across 6-episode matches when the rule planes $o_t[5{:}13]$ are completely zeroed out. Exact Bayesian Hypothesis Filtration (BHF) collapses rule posterior entropy from $6.49$ bits ($90.0$ candidates) at the start of Episode 1 to $1.69$ bits ($4.6$ surviving candidates) by Episode 6. While a blind fast policy stagnates at $0.565$ and BHF with a zero-search fast policy reaches $0.604$, combining BHF with posterior-sampled world-model search yields a clear synergy: adaptive \texttt{BHF + Posterior-Sampled Search + LTH} ($19.6$ expansions/move) climbs from $0.556$ in Episodes 1--2 to \textbf{$0.674$} in Episodes 5--6, and full \texttt{BHF + Posterior-Sampled Search} reaches \textbf{$0.715$} overall and \textbf{$0.757$} in Episodes 5--6.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\textwidth]{figures/fig4_architecture_comparison.pdf}
-    \caption{\textbf{Breaking the tactical cold-start trap (\S\ref{sec:citadel}).} (a) Policy cross-entropy and world-model win binary cross-entropy across iterations for the Baseline World Model vs.\ Toroidal-Equivariant BASIL-3. (b) \texttt{FastPolicy} score against \texttt{random} and \texttt{greedy} opponents during training.}
-    \label{fig:arch}
-\end{figure}
 
 \begin{figure}[t]
     \centering
@@ -183,6 +179,9 @@ Table~\ref{tab:cronenberg} and Figure~\ref{fig:cronenberg} evaluate adaptation a
     \label{fig:pareto}
 \end{figure}
 
+\subsection{In-Context Rule Induction in the Hidden-Rule Regime}
+Table~\ref{tab:cronenberg} and Figure~\ref{fig:cronenberg} evaluate adaptation across 6-episode matches when the rule planes $o_t[5{:}13]$ are completely zeroed out. Exact Bayesian Hypothesis Filtration (BHF) collapses rule posterior entropy from $6.49$ bits ($90.0$ candidates) at the start of Episode 1 to $1.69$ bits ($4.6$ surviving candidates) by Episode 6. While a blind fast policy stagnates at $0.565$ and BHF with a zero-search fast policy reaches $0.604$, combining BHF with posterior-sampled world-model search yields a clear synergy: adaptive \texttt{BHF + Posterior-Sampled Search + LTH} ($19.6$ expansions/move) climbs from $0.556$ in Episodes 1--2 to \textbf{$0.674$} in Episodes 5--6, and full \texttt{BHF + Posterior-Sampled Search} reaches \textbf{$0.715$} overall and \textbf{$0.757$} in Episodes 5--6.
+
 \begin{figure}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig3_cronenberg_cfc.pdf}
@@ -195,6 +194,7 @@ Table~\ref{tab:cronenberg} and Figure~\ref{fig:cronenberg} evaluate adaptation a
 \section{Conclusion}
 We have shown that making adaptive test-time imagination work on unseen games requires aligning three layers of the agent: (1) an equivariant, holographic manifold-coupled world model (BASIL-3) that preserves discrete board occupancy and evaluates an exact adjoint dihedral-torus tactical horizon; (2) an anytime optimal-stopping policy (Live Telemetry Halting) trained on low-variance self-supervised search traces and conditioned on live tree telemetry rather than pre-search guesses; and (3) in-context Exact Bayesian Hypothesis Filtration (BHF) when the governing mechanics of the environment are hidden. All code, preregistration hashes, checkpoints, and evaluation scripts are openly available in the repository.
 
+\clearpage
 \bibliographystyle{plainnat}
 \bibliography{references}
 
